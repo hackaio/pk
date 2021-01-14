@@ -2,6 +2,12 @@ package pp
 
 import (
 	"context"
+	"github.com/hackaio/pp/pkg/errors"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
+	ErrCouldNotCreateAcc = errors.New("could not create account")
 )
 
 // Hasher specifies an API for generating hashes of an arbitrary textual
@@ -71,21 +77,34 @@ func NewPPInstance(store Store, hasher Hasher) PP {
 }
 
 func (p *pp) Init(ctx context.Context, account Account) (err error) {
-	panic("implement me")
+	//lookup for the account
+	_, err = p.store.Get(ctx, account.Name)
+	if err != nil {
+		if err == ErrNotFound{
+			return p.store.Add(ctx,account)
+		}
+		return err
+	}
+
+	return ErrCouldNotCreateAcc
 }
 
-func (p *pp) Get(ctx context.Context, username string) (acc Account, err error) {
-	panic("implement me")
+func (p *pp) Get(ctx context.Context, name string) (acc Account, err error) {
+	acc,err = p.store.Get(ctx,name)
+	return
 }
 
 func (p *pp) List(ctx context.Context) (accounts []Account, err error) {
-	panic("implement me")
+	accounts,err = p.store.List(ctx)
+	return
 }
 
 func (p *pp) Delete(ctx context.Context, name, username string) (err error) {
-	panic("implement me")
+	err = p.store.Delete(ctx,username,name)
+	return
 }
 
 func (p *pp) Update(ctx context.Context, account Account) (acc Account, err error) {
-	panic("implement me")
+	acc,err = p.store.Update(ctx,account)
+	return
 }

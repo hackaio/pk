@@ -14,7 +14,9 @@ import (
 //	Created  string `json:"created,omitempty"`
 
 var (
+
 	errWTF = errors.New("what is this?")
+
 )
 
 const (
@@ -111,6 +113,9 @@ func (m *memstore) Get(ctx context.Context, name string) (account pp.Account, er
 		return pp.Account{}, err
 	}
 
+	if raw == nil{
+		return pp.Account{}, pp.ErrNotFound
+	}
 	acc,ok := raw.(*pp.Account)
 
 	if !ok{
