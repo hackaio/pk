@@ -2,7 +2,6 @@ package pp
 
 import (
 	"context"
-	"time"
 )
 
 // Hasher specifies an API for generating hashes of an arbitrary textual
@@ -17,10 +16,11 @@ type Hasher interface {
 }
 
 type Account struct {
-	Name     string    `json:"name"`
-	Email    string    `json:"email"`
-	Password string    `json:"password"`
-	Created  time.Time `json:"created"`
+	Name     string `json:"name,omitempty"`
+	UserName string `json:"username,omitempty"`
+	Email    string `json:"email,omitempty"`
+	Password string `json:"password,omitempty"`
+	Created  string `json:"created,omitempty"`
 }
 
 // PP specify an API for pp commandline tool
@@ -57,7 +57,7 @@ type Store interface {
 }
 
 type pp struct {
-	store Store
+	store  Store
 	hasher Hasher
 }
 
@@ -89,5 +89,3 @@ func (p *pp) Delete(ctx context.Context, name, username string) (err error) {
 func (p *pp) Update(ctx context.Context, account Account) (acc Account, err error) {
 	panic("implement me")
 }
-
-
