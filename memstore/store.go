@@ -2,8 +2,8 @@ package memstore
 
 import (
 	"context"
-	"github.com/hackaio/pp"
-	"github.com/hackaio/pp/pkg/errors"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/pkg/errors"
 	"github.com/hashicorp/go-memdb"
 )
 
@@ -76,9 +76,9 @@ type memstore struct {
 	db *memdb.MemDB
 }
 
-var _ pp.Store = (*memstore)(nil)
+var _ pk.Store = (*memstore)(nil)
 
-func New() (pp.Store,error) {
+func New() (pk.Store,error) {
 
 	db, err := initmemdb()
 
@@ -88,7 +88,7 @@ func New() (pp.Store,error) {
 	return &memstore{db: db},nil
 }
 
-func (m *memstore) Add(ctx context.Context, account pp.Account) error {
+func (m *memstore) Add(ctx context.Context, account pk.Account) error {
 	// Create a write transaction
 	txn := m.db.Txn(true)
 	 
@@ -102,7 +102,7 @@ func (m *memstore) Add(ctx context.Context, account pp.Account) error {
 	return nil
 }
 
-func (m *memstore) Get(ctx context.Context, name string) (account pp.Account, err error) {
+func (m *memstore) Get(ctx context.Context, name string) (account pk.Account, err error) {
 	// Create read-only transaction
 	txn := m.db.Txn(false)
 	defer txn.Abort()
@@ -110,23 +110,23 @@ func (m *memstore) Get(ctx context.Context, name string) (account pp.Account, er
 	// Lookup by email
 	raw, err := txn.First(accountsTableName, "name", name)
 	if err != nil {
-		return pp.Account{}, err
+		return pk.Account{}, err
 	}
 
 	if raw == nil{
-		return pp.Account{}, pp.ErrNotFound
+		return pk.Account{}, pk.ErrNotFound
 	}
-	acc,ok := raw.(*pp.Account)
+	acc,ok := raw.(*pk.Account)
 
 	if !ok{
-		return pp.Account{},errWTF
+		return pk.Account{},errWTF
 	}
 
 	return *acc,nil
 
 }
 
-func (m *memstore) List(ctx context.Context) (accounts []pp.Account, err error) {
+func (m *memstore) List(ctx context.Context) (accounts []pk.Account, err error) {
 	// Create read-only transaction
 	txn := m.db.Txn(false)
 	defer txn.Abort()
@@ -138,8 +138,8 @@ func (m *memstore) List(ctx context.Context) (accounts []pp.Account, err error) 
 	}
 
 	for obj := it.Next(); obj != nil; obj = it.Next() {
-		acc := obj.(*pp.Account)
-		accounts = append(accounts, *acc)
+		acc := obj.(*pk.Account)
+		accounts = apkend(accounts, *acc)
 	}
 
 	return
@@ -148,7 +148,7 @@ func (m *memstore) List(ctx context.Context) (accounts []pp.Account, err error) 
 func (m *memstore) Delete(ctx context.Context, username, name string) (err error) {
 	txn := m.db.Txn(true)
 	
-	account := pp.Account{
+	account := pk.Account{
 		Name:     name,
 		UserName: username,
 	}
@@ -163,12 +163,12 @@ func (m *memstore) Delete(ctx context.Context, username, name string) (err error
 	return nil
 }
 
-func (m *memstore) Update(ctx context.Context, account pp.Account) (acc pp.Account, err error) {
+func (m *memstore) Update(ctx context.Context, account pk.Account) (acc pk.Account, err error) {
 	// Create a write transaction
 	txn := m.db.Txn(true)
 
 	if err := txn.Insert(accountsTableName,account); err != nil{
-		return pp.Account{},err
+		return pk.Account{},err
 	}
 
 	// Commit the transaction

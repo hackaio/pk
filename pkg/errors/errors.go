@@ -10,7 +10,7 @@ type Error interface {
 	// Msg returns error message
 	Msg() string
 
-	// Err returns wrapped error
+	// Err returns wrapked error
 	Err() Error
 }
 
@@ -55,19 +55,19 @@ func Contains(e1 error, e2 error) bool {
 	return e1.Error() == e2.Error()
 }
 
-// Wrap returns an Error that wrap err with wrapper
-func Wrap(wrapper error, err error) error {
-	if wrapper == nil || err == nil {
-		return wrapper
+// Wrap returns an Error that wrap err with wrapker
+func Wrap(wrapker error, err error) error {
+	if wrapker == nil || err == nil {
+		return wrapker
 	}
-	if w, ok := wrapper.(Error); ok {
+	if w, ok := wrapker.(Error); ok {
 		return &customError{
 			msg: w.Msg(),
 			err: cast(err),
 		}
 	}
 	return &customError{
-		msg: wrapper.Error(),
+		msg: wrapker.Error(),
 		err: cast(err),
 	}
 }

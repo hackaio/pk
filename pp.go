@@ -1,8 +1,8 @@
-package pp
+package pk
 
 import (
 	"context"
-	"github.com/hackaio/pp/pkg/errors"
+	"github.com/hackaio/pk/pkg/errors"
 	"time"
 )
 
@@ -37,7 +37,7 @@ type Account struct {
 	Created  string `json:"created,omitempty"`
 }
 
-// Service specify an API for pp commandline tool
+// Service specify an API for pk commandline tool
 type Service interface {
 	//Init initializes new account that multiple passwords
 	//will be registered under it
@@ -73,23 +73,23 @@ type Store interface {
 	Update(ctx context.Context, account Account) (acc Account, err error)
 }
 
-type pp struct {
+type pk struct {
 	store  Store
 	hasher Hasher
 }
 
 
 
-var _ Service = (*pp)(nil)
+var _ Service = (*pk)(nil)
 
 func NewInstance(store Store, hasher Hasher) Service {
-	return &pp{
+	return &pk{
 		store:  store,
 		hasher: hasher,
 	}
 }
 
-func (p *pp) Init(ctx context.Context, username, email, password string) (err error) {
+func (p *pk) Init(ctx context.Context, username, email, password string) (err error) {
 	hash,err := p.hasher.Hash(password)
 
 	if err != nil {
@@ -117,7 +117,7 @@ func (p *pp) Init(ctx context.Context, username, email, password string) (err er
 	return ErrCouldNotCreateAcc
 }
 
-func (p *pp) Add(ctx context.Context, account Account) (err error) {
+func (p *pk) Add(ctx context.Context, account Account) (err error) {
 	hash,err := p.hasher.Hash(account.Password)
 
 	if err != nil {
@@ -146,22 +146,22 @@ func (p *pp) Add(ctx context.Context, account Account) (err error) {
 }
 
 
-func (p *pp) Get(ctx context.Context, name string) (acc Account, err error) {
+func (p *pk) Get(ctx context.Context, name string) (acc Account, err error) {
 	acc,err = p.store.Get(ctx,name)
 	return
 }
 
-func (p *pp) List(ctx context.Context) (accounts []Account, err error) {
+func (p *pk) List(ctx context.Context) (accounts []Account, err error) {
 	accounts,err = p.store.List(ctx)
 	return
 }
 
-func (p *pp) Delete(ctx context.Context, name, username string) (err error) {
+func (p *pk) Delete(ctx context.Context, name, username string) (err error) {
 	err = p.store.Delete(ctx,username,name)
 	return
 }
 
-func (p *pp) Update(ctx context.Context, account Account) (acc Account, err error) {
+func (p *pk) Update(ctx context.Context, account Account) (acc Account, err error) {
 	acc,err = p.store.Update(ctx,account)
 	return
 }

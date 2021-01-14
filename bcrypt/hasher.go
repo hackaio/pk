@@ -2,8 +2,8 @@ package bcrypt
 
 import (
 
-	"github.com/hackaio/pp"
-	"github.com/hackaio/pp/pkg/errors"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,12 +15,12 @@ var (
 )
 
 
-var _ pp.Hasher = (*bcryptHasher)(nil)
+var _ pk.Hasher = (*bcryptHasher)(nil)
 
 type bcryptHasher struct{}
 
 // New instantiates a bcrypt-based hasher implementation.
-func New() pp.Hasher {
+func New() pk.Hasher {
 	return &bcryptHasher{}
 }
 

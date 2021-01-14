@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+Unless required by apklicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -16,10 +16,10 @@ limitations under the License.
 package main
 
 import (
-	"github.com/hackaio/pp"
-	"github.com/hackaio/pp/bcrypt"
-	"github.com/hackaio/pp/cli"
-	"github.com/hackaio/pp/memstore"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/cli"
+	"github.com/hackaio/pk/memstore"
 )
 
 func main() {
@@ -30,8 +30,8 @@ func main() {
 		panic(err)
 	}
 
-	ppInstance := pp.NewInstance(store,hasher)
-	ppInstance = pp.AuthMiddleware(ppInstance)
-	//ppInstance.Add()
+	pkInstance := pk.NewInstance(store,hasher)
+	pkInstance = pk.AuthMiddleware(pkInstance)
+	//pkInstance.Add()
 	cli.Execute()
 }

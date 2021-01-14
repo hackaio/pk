@@ -1,4 +1,4 @@
-module github.com/hackaio/pp
+module github.com/hackaio/pk
 
 go 1.15
 

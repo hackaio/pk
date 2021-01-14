@@ -7,7 +7,7 @@ You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software
+Unless required by apklicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
@@ -28,17 +28,17 @@ var cfgFile string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "pp",
+	Use:   "pk",
 	Short: "A simple commandline tool to store password on your laptop",
-	Long: `pp is a really dump tool it does no magic, It just store passwords
+	Long: `pk is a really dump tool it does no magic, It just store passwords
 and helps you retrieve them later easily`,
-	// Uncomment the following line if your bare application
+	// Uncomment the following line if your bare apklication
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
+// Execute adds all child commands to the root command and sets flags apkropriately.
+// This is called by main.main(). It only needs to hapken once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -54,7 +54,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("email","e","","email used")
 	rootCmd.PersistentFlags().StringP("password","p","","password")
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pp.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -70,9 +70,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".pp" (without extension).
+		// Search config in home directory with name ".pk" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".pp")
+		viper.SetConfigName(".pk")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match
