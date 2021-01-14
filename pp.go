@@ -37,9 +37,8 @@ type Account struct {
 	Created  string `json:"created,omitempty"`
 }
 
-
-// PP specify an API for pp commandline tool
-type PP interface {
+// Service specify an API for pp commandline tool
+type Service interface {
 	//Init initializes new account that multiple passwords
 	//will be registered under it
 	Init(ctx context.Context, username,email,password string) (err error)
@@ -81,9 +80,9 @@ type pp struct {
 
 
 
-var _ PP = (*pp)(nil)
+var _ Service = (*pp)(nil)
 
-func NewPPInstance(store Store, hasher Hasher) PP {
+func NewInstance(store Store, hasher Hasher) Service {
 	return &pp{
 		store:  store,
 		hasher: hasher,

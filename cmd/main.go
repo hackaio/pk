@@ -15,8 +15,23 @@ limitations under the License.
 */
 package main
 
-import "github.com/hackaio/pp/cli"
+import (
+	"github.com/hackaio/pp"
+	"github.com/hackaio/pp/bcrypt"
+	"github.com/hackaio/pp/cli"
+	"github.com/hackaio/pp/memstore"
+)
 
 func main() {
+
+	hasher := bcrypt.New()
+	store,err := memstore.New()
+	if err != nil {
+		panic(err)
+	}
+
+	ppInstance := pp.NewInstance(store,hasher)
+	ppInstance = pp.AuthMiddleware(ppInstance)
+	//ppInstance.Add()
 	cli.Execute()
 }

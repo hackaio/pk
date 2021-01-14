@@ -4,8 +4,8 @@ import "context"
 
 type authMiddleware struct {
 	hasher Hasher
-	store Store
-	next PP
+	store  Store
+	next   Service
 }
 
 func (a authMiddleware) Init(ctx context.Context, username, email, password string) (err error) {
@@ -32,6 +32,6 @@ func (a authMiddleware) Update(ctx context.Context, account Account) (acc Accoun
 	panic("implement me")
 }
 
-func AuthMiddleware(p PP) PP {
+func AuthMiddleware(p Service) Service {
 	return authMiddleware{next: p}
 }
