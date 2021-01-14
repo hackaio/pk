@@ -15,8 +15,8 @@ limitations under the License.
 */
 package main
 
-import "github.com/hackaio/pp/cmd"
+import "github.com/hackaio/pp/cli"
 
 func main() {
-	cmd.Execute()
+	cli.Execute()
 }
