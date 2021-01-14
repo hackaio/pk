@@ -3,6 +3,14 @@ package pp
 import (
 	"context"
 	"github.com/hackaio/pp/pkg/errors"
+	"time"
+)
+
+type AccType int
+
+const (
+	Master AccType = iota
+	Normal
 )
 
 var (
@@ -29,11 +37,15 @@ type Account struct {
 	Created  string `json:"created,omitempty"`
 }
 
+
 // PP specify an API for pp commandline tool
 type PP interface {
 	//Init initializes new account that multiple passwords
 	//will be registered under it
-	Init(ctx context.Context, account Account) (err error)
+	Init(ctx context.Context, username,email,password string) (err error)
+
+	//Add create new acc
+	Add(ctx context.Context,account Account)(err error)
 
 	//Get returns a password of a specified account use id/username/name
 	//of account
@@ -67,6 +79,8 @@ type pp struct {
 	hasher Hasher
 }
 
+
+
 var _ PP = (*pp)(nil)
 
 func NewPPInstance(store Store, hasher Hasher) PP {
@@ -76,7 +90,22 @@ func NewPPInstance(store Store, hasher Hasher) PP {
 	}
 }
 
-func (p *pp) Init(ctx context.Context, account Account) (err error) {
+func (p *pp) Init(ctx context.Context, username, email, password string) (err error) {
+	hash,err := p.hasher.Hash(password)
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	account := Account{
+		Name:     "master",
+		UserName: username,
+		Email:    email,
+		Password: hash,
+		Created:  now,
+	}
+
 	//lookup for the account
 	_, err = p.store.Get(ctx, account.Name)
 	if err != nil {
@@ -88,6 +117,35 @@ func (p *pp) Init(ctx context.Context, account Account) (err error) {
 
 	return ErrCouldNotCreateAcc
 }
+
+func (p *pp) Add(ctx context.Context, account Account) (err error) {
+	hash,err := p.hasher.Hash(account.Password)
+
+	if err != nil {
+		return err
+	}
+
+	now := time.Now().Format(time.RFC3339)
+	acc := Account{
+		Name:     account.Name,
+		UserName: account.UserName,
+		Email:    account.Email,
+		Password: hash,
+		Created:  now,
+	}
+
+	//lookup for the account
+	_, err = p.store.Get(ctx, acc.Name)
+	if err != nil {
+		if err == ErrNotFound{
+			return p.store.Add(ctx,acc)
+		}
+		return err
+	}
+
+	return ErrCouldNotCreateAcc
+}
+
 
 func (p *pp) Get(ctx context.Context, name string) (acc Account, err error) {
 	acc,err = p.store.Get(ctx,name)
@@ -108,3 +166,4 @@ func (p *pp) Update(ctx context.Context, account Account) (acc Account, err erro
 	acc,err = p.store.Update(ctx,account)
 	return
 }
+
