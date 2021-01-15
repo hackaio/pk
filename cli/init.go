@@ -17,30 +17,87 @@ package cli
 
 import (
 	"fmt"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/sqlite"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 )
 
-// initCmd represents the init command
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "initialize pk",
-	Long:  `this command should be run the first time to set up pk on your machine`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("init called")
-	},
-}
+var (
+	initCmd   *cobra.Command
+	addCmd    *cobra.Command
+	getCmd    *cobra.Command
+	listCmd   *cobra.Command
+	updateCmd *cobra.Command
+	deleteCmd *cobra.Command
+	loginCmd  *cobra.Command
+)
 
-func init() {
-	rootCmd.AddCommand(initCmd)
+func configureCommands() {
+	dbpath := filepath.Join(appHome, "accounts.db")
+	hasher := bcrypt.New()
+	store, err := sqlite.NewStore(dbpath)
+	if err != nil {
+		panic(err)
+	}
 
-	// Here you will define your flags and configuration settings.
+	authMiddleware := pk.AuthMiddleware("", "")
+	middlewares := []pk.Middleware{authMiddleware}
+	pkInstance := pk.NewPKService(store, hasher, middlewares)
+	wr := NewWrapper(pkInstance)
 
-	// Cobra supkorts Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
+	initCmd = &cobra.Command{
+		Use:   "init",
+		Short: "initialize pk",
+		Long:  `this command should be run the first time to set up pk on your machine`,
+		Run:   wr.start,
+	}
 
-	// Cobra supkorts local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	deleteCmd = &cobra.Command{
+		Use:   "delete",
+		Short: "delete <username> <password> <name> <username>",
+		Long:  `delete an account that was previously recorded.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("delete called")
+		},
+	}
+
+	getCmd = &cobra.Command{
+		Use:   "get",
+		Short: "get -t <token> -n <name> -u <username>",
+		Long: `get all details of account`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("get called")
+		},
+	}
+
+	updateCmd = &cobra.Command{
+		Use:   "update",
+		Short: "update -t <token> <password> <username>",
+		Long: `updates details of the account. You can only update password and username`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("update called")
+		},
+	}
+
+	listCmd = &cobra.Command{
+		Use:   "list",
+		Short: "list -t <token>",
+		Long: `list all details of all accounts`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("get called")
+		},
+	}
+
+	loginCmd = &cobra.Command{
+		Use:   "login",
+		Short: "login <username> <password>",
+		Long: `login to the platform. generate token.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("update called")
+		},
+	}
+
 }

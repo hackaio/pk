@@ -17,6 +17,10 @@ func NewStore(dbpath string) (s pk.Store, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
 	return store{db: db}, nil
 }
 

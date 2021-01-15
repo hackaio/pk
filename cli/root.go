@@ -19,12 +19,14 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
+	"path/filepath"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
 var cfgFile string
+var appHome string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -32,12 +34,9 @@ var rootCmd = &cobra.Command{
 	Short: "A simple commandline tool to store password on your laptop",
 	Long: `pk is a really dump tool it does no magic, It just store passwords
 and helps you retrieve them later easily`,
-	// Uncomment the following line if your bare apklication
-	// has an action associated with it:
-	//	Run: func(cmd *cobra.Command, args []string) { },
-}
+	}
 
-// Execute adds all child commands to the root command and sets flags apkropriately.
+// Execute adds all child CLI to the root command and sets flags apkropriately.
 // This is called by main.main(). It only needs to hapken once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
@@ -47,6 +46,10 @@ func Execute() {
 }
 
 func init() {
+
+	//initialize all commands
+	configureCommands()
+
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringP("name", "n", "", "name of account")
@@ -55,6 +58,8 @@ func init() {
 	rootCmd.PersistentFlags().StringP("password", "p", "", "password")
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
+
+	rootCmd.AddCommand(initCmd,addCmd,getCmd,listCmd,updateCmd,deleteCmd,loginCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -65,6 +70,8 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
+		appHome = filepath.Join(home,".pk","database")
+		err = os.Mkdir(appHome,0600)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
