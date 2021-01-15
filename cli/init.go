@@ -25,7 +25,7 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "initialize pk",
-	Long: `this command should be run the first time to set up pk on your machine`,
+	Long:  `this command should be run the first time to set up pk on your machine`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("init called")
 	},

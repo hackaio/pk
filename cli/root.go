@@ -49,10 +49,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringP("name","n","","name of account")
-	rootCmd.PersistentFlags().StringP("username","u","","account username")
-	rootCmd.PersistentFlags().StringP("email","e","","email used")
-	rootCmd.PersistentFlags().StringP("password","p","","password")
+	rootCmd.PersistentFlags().StringP("name", "n", "", "name of account")
+	rootCmd.PersistentFlags().StringP("username", "u", "", "account username")
+	rootCmd.PersistentFlags().StringP("email", "e", "", "email used")
+	rootCmd.PersistentFlags().StringP("password", "p", "", "password")
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
 }

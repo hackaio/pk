@@ -1,6 +1,5 @@
 package errors
 
-
 // Error specifies an API that must be fullfiled by error type
 type Error interface {
 
@@ -92,4 +91,3 @@ func New(text string) Error {
 		err: nil,
 	}
 }
-

@@ -1,11 +1,13 @@
 package pk
 
-import "context"
+import (
+	"context"
+)
 
 type authMiddleware struct {
-	hasher Hasher
-	store  Store
-	next   Service
+	userName string
+	password string
+	next     Service
 }
 
 func (a authMiddleware) Init(ctx context.Context, username, email, password string) (err error) {
@@ -32,6 +34,15 @@ func (a authMiddleware) Update(ctx context.Context, account Account) (acc Accoun
 	panic("implement me")
 }
 
-func AuthMiddleware(p Service) Service {
-	return authMiddleware{next: p}
+// AuthMiddleware takes a username and password as a dependency
+// and returns a Service Middleware.
+func AuthMiddleware(username, password string) Middleware {
+	return func(next Service) Service {
+		return &authMiddleware{
+			userName: username,
+			password: password,
+			next:     next,
+		}
+	}
+
 }

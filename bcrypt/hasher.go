@@ -1,7 +1,6 @@
 package bcrypt
 
 import (
-
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
 	"golang.org/x/crypto/bcrypt"
@@ -13,7 +12,6 @@ var (
 	errHashPassword    = errors.New("generate hash from password failed")
 	errComparePassword = errors.New("compare hash and password failed")
 )
-
 
 var _ pk.Hasher = (*bcryptHasher)(nil)
 
@@ -40,4 +38,3 @@ func (bh *bcryptHasher) Compare(plain, hashed string) error {
 	}
 	return nil
 }
-
