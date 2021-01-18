@@ -103,7 +103,7 @@ func (s store) Delete(ctx context.Context, name, username string) (err error) {
 		return err
 	}
 
-	_, err = st.Exec(name,username)
+	_, err = st.Exec(name, username)
 	if err != nil {
 		return err
 	}

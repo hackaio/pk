@@ -44,5 +44,4 @@ type CLI interface {
 	list(cmd *cobra.Command, args []string)
 	delete(cmd *cobra.Command, args []string)
 	update(cmd *cobra.Command, args []string)
-
 }

@@ -16,16 +16,12 @@ limitations under the License.
 package main
 
 import (
-	"context"
-	"github.com/hackaio/pk"
-	"github.com/hackaio/pk/bcrypt"
 	"github.com/hackaio/pk/cli"
-	"github.com/hackaio/pk/sqlite"
 )
 
 func main() {
 
-	hasher := bcrypt.New()
+	/*hasher := bcrypt.New()
 	store, err := sqlite.NewStore("sgsgsg")
 	if err != nil {
 		panic(err)
@@ -35,6 +31,6 @@ func main() {
 	authMiddleware := pk.AuthMiddleware("","")
 	middlewares := []pk.Middleware{authMiddleware}
 	pkInstance := pk.NewPKService(store,hasher,middlewares)
-	pkInstance.Add(context.Background(),pk.Account{})
+	pkInstance.Add(context.Background(),pk.Account{})*/
 	cli.Execute()
 }

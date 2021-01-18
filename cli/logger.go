@@ -45,4 +45,3 @@ func logCreated(e string) {
 	fmt.Printf(color.BlueString("\ncreated: %s\n\n"), e)
 
 }
-

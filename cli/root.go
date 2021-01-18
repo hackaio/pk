@@ -34,7 +34,7 @@ var rootCmd = &cobra.Command{
 	Short: "A simple commandline tool to store password on your laptop",
 	Long: `pk is a really dump tool it does no magic, It just store passwords
 and helps you retrieve them later easily`,
-	}
+}
 
 // Execute adds all child CLI to the root command and sets flags apkropriately.
 // This is called by main.main(). It only needs to hapken once to the rootCmd.
@@ -56,10 +56,11 @@ func init() {
 	rootCmd.PersistentFlags().StringP("username", "u", "", "account username")
 	rootCmd.PersistentFlags().StringP("email", "e", "", "email used")
 	rootCmd.PersistentFlags().StringP("password", "p", "", "password")
+	rootCmd.PersistentFlags().StringP("token", "t", "", "login token")
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
 
-	rootCmd.AddCommand(initCmd,addCmd,getCmd,listCmd,updateCmd,deleteCmd,loginCmd)
+	rootCmd.AddCommand(initCmd, addCmd, getCmd, listCmd, updateCmd, deleteCmd, loginCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -70,8 +71,8 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
-		appHome = filepath.Join(home,".pk","database")
-		err = os.Mkdir(appHome,0600)
+		appHome = filepath.Join(home, ".pk", "database")
+		err = os.Mkdir(appHome, 0600)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)

@@ -8,6 +8,5 @@ import (
 func initdb(dbpath string) (db *sql.DB, err error) {
 	db, err = sql.Open("sqlite3", dbpath)
 
-
 	return
 }

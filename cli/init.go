@@ -52,22 +52,32 @@ func configureCommands() {
 		Use:   "init",
 		Short: "initialize pk",
 		Long:  `this command should be run the first time to set up pk on your machine`,
-		Run:   wr.start,
+
+		Run: wr.start,
 	}
 
 	deleteCmd = &cobra.Command{
 		Use:   "delete",
-		Short: "delete <username> <password> <name> <username>",
+		Short: "delete account",
 		Long:  `delete an account that was previously recorded.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("delete called")
 		},
 	}
 
+	addCmd = &cobra.Command{
+		Use:   "add",
+		Short: "add new account",
+		Long:  `add new account details`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("get called")
+		},
+	}
+
 	getCmd = &cobra.Command{
 		Use:   "get",
-		Short: "get -t <token> -n <name> -u <username>",
-		Long: `get all details of account`,
+		Short: "get details of account",
+		Long:  `get all details of account`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("get called")
 		},
@@ -75,8 +85,8 @@ func configureCommands() {
 
 	updateCmd = &cobra.Command{
 		Use:   "update",
-		Short: "update -t <token> <password> <username>",
-		Long: `updates details of the account. You can only update password and username`,
+		Short: "update username/password",
+		Long:  `updates details of the account. You can only update password and username`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("update called")
 		},
@@ -84,8 +94,8 @@ func configureCommands() {
 
 	listCmd = &cobra.Command{
 		Use:   "list",
-		Short: "list -t <token>",
-		Long: `list all details of all accounts`,
+		Short: "list all accounts",
+		Long:  `list all details of all accounts`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("get called")
 		},
@@ -93,8 +103,8 @@ func configureCommands() {
 
 	loginCmd = &cobra.Command{
 		Use:   "login",
-		Short: "login <username> <password>",
-		Long: `login to the platform. generate token.`,
+		Short: "login to the app",
+		Long:  `login to the platform. generate token.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("update called")
 		},
