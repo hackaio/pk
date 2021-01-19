@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -11,22 +12,34 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/pkg/errors"
+	"github.com/mitchellh/go-homedir"
 	"os"
+	"path/filepath"
 )
 
-type rsaEncoder struct {
+var (
+	ErrInternalError   = errors.New("internal error, possible db compromise")
+	ErrCriticalFailure = errors.New("could not perform critical operation")
+)
+
+type rsaEncoderSigner struct {
 	PublicKey *rsa.PublicKey
 	PrivateKey *rsa.PrivateKey
 }
 
+
+var _ pk.Encoder = (*rsaEncoderSigner)(nil)
+var _ pk.Signer = (*rsaEncoderSigner)(nil)
+
 func NewEncoder(pubKey rsa.PublicKey,privKey rsa.PrivateKey) pk.Encoder {
-	return &rsaEncoder{
+	return &rsaEncoderSigner{
 		PublicKey:  &pubKey,
 		PrivateKey: &privKey,
 	}
 }
 
-func (r rsaEncoder) Encode(password string) ([]byte, error) {
+func (r rsaEncoderSigner) Encode(password string) ([]byte, error) {
 	encryptedBytes, err := rsa.EncryptOAEP(
 			sha256.New(),
 			rand.Reader,
@@ -38,7 +51,7 @@ func (r rsaEncoder) Encode(password string) ([]byte, error) {
 	return encryptedBytes, err
 }
 
-func (r rsaEncoder) Decode(encoded []byte) (string, error) {
+func (r rsaEncoderSigner) Decode(encoded []byte) (string, error) {
 	// The first argument is an optional random data generator (the rand.Reader we used before)
 	// we can set this value as nil
 	// The OEAPOptions in the end signify that we encrypted the data using OEAP, and that we used
@@ -50,20 +63,7 @@ func (r rsaEncoder) Decode(encoded []byte) (string, error) {
 
 }
 
-type signer struct {
-	PublicKey *rsa.PublicKey
-	PrivateKey *rsa.PrivateKey
-}
-
-func NewSigner(pubKey rsa.PublicKey,privKey rsa.PrivateKey) pk.Signer {
-	return &signer{
-		PublicKey:  &pubKey,
-		PrivateKey: &privKey,
-	}
-}
-
-
-func (s signer) Sign(password string) (digest []byte ,signature []byte, err error) {
+func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte, err error) {
 	msg := []byte(password)
 
 	// Before signing, we need to hash our message
@@ -71,7 +71,7 @@ func (s signer) Sign(password string) (digest []byte ,signature []byte, err erro
 	msgHash := sha256.New()
 	_, err = msgHash.Write(msg)
 	if err != nil {
-		return nil,nil, err
+		return nil,nil, errors.Wrap(err, ErrCriticalFailure)
 	}
 	digest = msgHash.Sum(nil)
 
@@ -80,30 +80,43 @@ func (s signer) Sign(password string) (digest []byte ,signature []byte, err erro
 	// of our message
 	signature, err = rsa.SignPSS(
 		rand.Reader,
-		s.PrivateKey,
+		r.PrivateKey,
 		crypto.SHA256,
 		digest,
 		nil)
 
 	if err != nil {
-		return nil,nil, err
+		return nil,nil, errors.Wrap(err,ErrCriticalFailure)
 	}
 
 	return digest,signature,nil
-
 }
 
-func (s signer) Verify(digest []byte, signature []byte) (err error) {
+func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature []byte) (err error) {
+
+	digest, _, err := r.Sign(password)
+
+
+	//Compares the digest of recovered password and that retrieved from db
+	comp := bytes.Compare(digest,dbDigest)
+
+	if comp != 0{
+		return ErrInternalError
+	}
+
+	//If the digest compares we verify it with the stored signature
 	// To verify the signature, we provide the public key, the hashing algorithm
 	// the hash sum of our message and the signature we generated previously
 	// there is an optional "options" parameter which can omit for now
-	err = rsa.VerifyPSS(s.PublicKey, crypto.SHA256, digest, signature, nil)
+	err = rsa.VerifyPSS(r.PublicKey, crypto.SHA256, digest, dbSignature, nil)
 	if err != nil {
-		return err
+		return ErrInternalError
 	}
 
 	return nil
+
 }
+
 
 func savePEMKey(fileName string, key *rsa.PrivateKey) {
 	outFile, err := os.Create(fileName)
@@ -195,7 +208,28 @@ func checkError(err error) {
 
 
 
-func main() {;
+func main() {
+
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Printf("can not find home: %v\n",err)
+		os.Exit(1)
+	}
+	appHome := filepath.Join(home, ".pk", "creds")
+	err = os.MkdirAll(appHome, 0700)
+	if err != nil {
+		fmt.Printf("can not create dir: %v\n",err)
+		os.Exit(1)
+	}
+
+
+	fmt.Printf("%v\n",appHome)
+
+	_, err = NewCipher(appHome)
+
+
+
 	// The GenerateKey method takes in a reader that returns random bits, and
 	// the number of bits
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -215,7 +249,7 @@ func main() {;
 
 	checkError(err)
 
-	rsaEnc := rsaEncoder{
+	rsaEnc := rsaEncoderSigner{
 		PublicKey:  pubkey,
 		PrivateKey: privkey,
 	}
@@ -235,17 +269,16 @@ func main() {;
 
 	fmt.Printf("%v\n",btStr)
 
-	passSigner := signer{
-		PublicKey:  pubkey,
-		PrivateKey: privkey,
+	msg := "message"
+
+	digest,signature, err := rsaEnc.Sign(msg)
+
+	err = rsaEnc.Verify("message",digest,signature)
+
+	if err != nil {
+		panic(err)
+		os.Exit(1)
 	}
-
-	msg := "verifiable message"
-
-	digest,signature, err := passSigner.Sign(msg)
-
-	err = passSigner.Verify(digest,signature)
-
 	// If we don't get any error from the `VerifyPSS` method, that means our
 	// signature is valid
 	fmt.Println("signature verified")

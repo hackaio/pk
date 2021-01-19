@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-
-
 // Hasher specifies an API for generating hashes of an arbitrary textual
 // content.
 type Hasher interface {
@@ -18,13 +16,10 @@ type Hasher interface {
 	Compare(string, string) error
 }
 
-
-
 type Signer interface {
+	Sign(string) ([]byte, []byte, error)
 
-	Sign(string) ([]byte,[]byte, error)
-
-	Verify(digest []byte, signature []byte) error
+	Verify(password string, dbDigest []byte, dbSignature []byte) (err error)
 }
 
 type Account struct {
@@ -33,6 +28,12 @@ type Account struct {
 	Email    string `json:"email,omitempty"`
 	Password string `json:"password,omitempty"`
 	Created  string `json:"created,omitempty"`
+}
+
+type RegisterRequest struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type LoginRequest struct {
@@ -70,13 +71,12 @@ type ListResponse struct {
 }
 
 type UpdateRequest struct {
-	Token string `json:"token"`
-	Name string `json:"name"`
+	Token    string `json:"token"`
+	Name     string `json:"name"`
 	Username string `json:"username"`
-	NewUser string `json:"new_user"` //new username of the account
+	NewUser  string `json:"new_user"` //new username of the account
 	Password string `json:"password"`
-	Email string `json:"email"`
-
+	Email    string `json:"email"`
 }
 
 //ErrResponse is a generic error response for function
@@ -91,7 +91,7 @@ type PasswordKeeper interface {
 	//Username, Email, Password. Account name is "master"
 	//This is the first function to be called when running
 	//the app
-	Register(ctx context.Context, account Account) (err ErrResponse)
+	Register(ctx context.Context, request RegisterRequest) (err ErrResponse)
 
 	//Login function returns token after a user has supplied
 	//his correct username and password or else an error
@@ -115,25 +115,22 @@ type PasswordKeeper interface {
 	//name e.g github
 	Delete(ctx context.Context, request GetRequest) (err ErrResponse)
 
-
 	//List returns all the accounts registered under the master
 	//accounts
 	List(ctx context.Context) (list ListResponse)
 
-
 	//Updates the details of the account
-	Update(ctx context.Context,request UpdateRequest)(response ErrResponse)
+	Update(ctx context.Context, request UpdateRequest) (response ErrResponse)
 }
 
 type PasswordStore interface {
-	CheckAccount(ctx context.Context, name, username string)(err error)
-	Add(ctx context.Context,account Account)(err error)
-	Get(ctx context.Context, name, username string)(account Account,err error)
-	Delete(ctx context.Context, name, username string)(err error)
-	Update(ctx context.Context, name, username string, account Account)(err error)
-	List(ctx context.Context)(accounts []Account,err error)
+	CheckAccount(ctx context.Context, name, username string) (err error)
+	Add(ctx context.Context, account Account) (err error)
+	Get(ctx context.Context, name, username string) (account Account, err error)
+	Delete(ctx context.Context, name, username string) (err error)
+	Update(ctx context.Context, name, username string, account Account) (err error)
+	List(ctx context.Context) (accounts []Account, err error)
 }
-
 
 type passwordKeeper struct {
 	hasher    Hasher
@@ -143,25 +140,25 @@ type passwordKeeper struct {
 
 var _ PasswordKeeper = (*passwordKeeper)(nil)
 
-func (p passwordKeeper) Register(ctx context.Context, account Account) (errResponse ErrResponse) {
-	password,err := p.hasher.Hash(account.Password)
+func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
+	password, err := p.hasher.Hash(request.Password)
 	if err != nil {
-		return ErrResponse{Err:err.Error()}
+		return ErrResponse{Err: err.Error()}
 	}
 
 	created := time.Now().UTC().Format(time.RFC3339)
 	dbAccount := Account{
 		Name:     "master",
-		UserName: account.UserName,
-		Email:    account.Email,
+		UserName: request.Username,
+		Email:    request.Email,
 		Password: password,
 		Created:  created,
 	}
 
-	err = p.passwords.Add(ctx,dbAccount)
+	err = p.passwords.Add(ctx, dbAccount)
 
 	if err != nil {
-		return ErrResponse{Err:err.Error()}
+		return ErrResponse{Err: err.Error()}
 	}
 
 	return ErrResponse{}
@@ -170,7 +167,7 @@ func (p passwordKeeper) Register(ctx context.Context, account Account) (errRespo
 func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
 	username := request.UserName
 	password := request.Password
-	account,err := p.passwords.Get(ctx,"master",username)
+	account, err := p.passwords.Get(ctx, "master", username)
 	if err != nil {
 		return LoginResponse{
 			Token: "",
@@ -178,7 +175,7 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 		}
 	}
 
-	err = p.hasher.Compare(account.Password,password)
+	err = p.hasher.Compare(account.Password, password)
 	if err != nil {
 		return LoginResponse{
 			Token: "",
@@ -188,7 +185,7 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 
 	token := NewToken(account.UserName)
 
-	tokenStr,err := p.tokenizer.Issue(token)
+	tokenStr, err := p.tokenizer.Issue(token)
 	if err != nil {
 		return LoginResponse{
 			Token: "",
@@ -222,5 +219,3 @@ func (p passwordKeeper) List(ctx context.Context) (list ListResponse) {
 func (p passwordKeeper) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
 	panic("implement me")
 }
-
-
