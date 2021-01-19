@@ -18,10 +18,6 @@ import (
 	"path/filepath"
 )
 
-var (
-	ErrInternalError   = errors.New("internal error, possible db compromise")
-	ErrCriticalFailure = errors.New("could not perform critical operation")
-)
 
 type rsaEncoderSigner struct {
 	PublicKey *rsa.PublicKey
@@ -32,28 +28,36 @@ type rsaEncoderSigner struct {
 var _ pk.Encoder = (*rsaEncoderSigner)(nil)
 var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
-func NewEncoderSigner(credentialsDir string) (pk.EncoderSigner,error){
+func NewEncoderSigner(homeDir string) (es pk.EncoderSigner,err error){
 
-	privateKeyPEMFile := filepath.Join(credentialsDir, "private.pem")
-	publicKeyPEMFile := filepath.Join(credentialsDir, "public.pem")
+	credsDir := filepath.Join(homeDir,pk.AppDir,pk.CredsDir)
+	privateKeyPEMFile := filepath.Join(credsDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(credsDir, "public.pem")
 
-	_, err := os.Stat(privateKeyPEMFile)
+	fmt.Printf("scanning creds at %v and %v ..... \n",privateKeyPEMFile,publicKeyPEMFile)
 
-	if os.IsExist(err){
-		//create publicKey and privateKey
-		err1 :=  initCredentials(credentialsDir)
-		if err1 != nil {
+	_,errNoPrivatePEMFile := os.Stat(privateKeyPEMFile)
+	_,errNoPubKeyPEMFile := os.Stat(publicKeyPEMFile)
+
+	if errNoPrivatePEMFile == nil && errNoPubKeyPEMFile == nil{
+		fmt.Printf("creds files exists... load em up\n")
+		pubKey, privateKey, err := loadCredentials(credsDir)
+		es = rsaEncoderSigner{
+			PublicKey:  pubKey,
+			PrivateKey: privateKey,
+		}
+
+		if err != nil {
 			return nil, err
 		}
+
+
+	} else if os.IsNotExist(errNoPubKeyPEMFile) || os.IsNotExist(errNoPrivatePEMFile) {
+		fmt.Printf("creds files do not exists... time to craft\n")
+		err = initCredentials(homeDir)
 	}
-	_,err = os.Stat(publicKeyPEMFile)
 
-	if err != nil {
-		return nil, err
-	}
-
-
-	pubKey, privateKey, err := loadCredentials(credentialsDir)
+	pubKey, privateKey, err := loadCredentials(credsDir)
 
 	if err != nil {
 		return nil, err
@@ -96,7 +100,7 @@ func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte
 	msgHash := sha256.New()
 	_, err = msgHash.Write(msg)
 	if err != nil {
-		return nil,nil, errors.Wrap(err, ErrCriticalFailure)
+		return nil,nil, errors.Wrap(err, pk.ErrCriticalFailure)
 	}
 	digest = msgHash.Sum(nil)
 
@@ -111,7 +115,7 @@ func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte
 		nil)
 
 	if err != nil {
-		return nil,nil, errors.Wrap(err,ErrCriticalFailure)
+		return nil,nil, errors.Wrap(err,pk.ErrCriticalFailure)
 	}
 
 	return digest,signature,nil
@@ -126,7 +130,7 @@ func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature [
 	comp := bytes.Compare(digest,dbDigest)
 
 	if comp != 0{
-		return ErrInternalError
+		return pk.ErrInternalError
 	}
 
 	//If the digest compares we verify it with the stored signature
@@ -135,7 +139,7 @@ func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature [
 	// there is an optional "options" parameter which can omit for now
 	err = rsa.VerifyPSS(r.PublicKey, crypto.SHA256, digest, dbSignature, nil)
 	if err != nil {
-		return ErrInternalError
+		return pk.ErrInternalError
 	}
 
 	return nil
@@ -143,9 +147,13 @@ func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature [
 }
 
 
-func savePEMKey(fileName string, key *rsa.PrivateKey) {
+func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 	outFile, err := os.Create(fileName)
-	checkError(err)
+	if err != nil {
+		errMsg := errors.New(fmt.Sprintf("could not create %v file\n",fileName))
+		return errors.Wrap(errMsg,err)
+	}
+
 	defer outFile.Close()
 
 	var privateKey = &pem.Block{
@@ -154,12 +162,20 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) {
 	}
 
 	err = pem.Encode(outFile, privateKey)
-	checkError(err)
+	if err != nil {
+		errMsg := errors.New("could not encode file to pem format")
+		return errors.Wrap(errMsg,err)
+	}
+
+	return nil
 }
 
-func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) {
+func savePublicPEMKey(fileName string, pubkey rsa.PublicKey)(err error) {
 	asn1Bytes, err := asn1.Marshal(pubkey)
-	checkError(err)
+	if err != nil {
+		errMsg := errors.New("could not marshal the public key bytes")
+		return errors.Wrap(errMsg,err)
+	}
 
 	var pemkey = &pem.Block{
 		Type:  "PUBLIC KEY",
@@ -167,11 +183,19 @@ func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) {
 	}
 
 	pemFile, err := os.Create(fileName)
-	checkError(err)
+	if err != nil {
+		errMsg := errors.New(fmt.Sprintf("could not create %v file\n",fileName))
+		return errors.Wrap(errMsg,err)
+	}
 	defer pemFile.Close()
 
 	err = pem.Encode(pemFile, pemkey)
-	checkError(err)
+	if err != nil {
+		errMsg := errors.New(fmt.Sprintf("could not encode %v file to pem format\n",fileName))
+		return errors.Wrap(errMsg,err)
+	}
+
+	return nil
 }
 
 func privateKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
@@ -223,12 +247,7 @@ func pubKeyFromPEM(filename string)(key *rsa.PublicKey, err error){
 	return publicKeyFromFile, err
 }
 
-func checkError(err error) {
-	if err != nil {
-		fmt.Println("Fatal error ", err.Error())
-		os.Exit(1)
-	}
-}
+
 
 func loadCredentials(credentialsDir string) (
 	publicKey *rsa.PublicKey, privateKey *rsa.PrivateKey, err error) {
@@ -249,7 +268,9 @@ func loadCredentials(credentialsDir string) (
 
 }
 
-func initCredentials(credentialsDir string) (err error) {
+func initCredentials(homeDir string) (err error) {
+
+	fmt.Printf("init credentials .....\n")
 	//Check if File exists if not create the credentials and save them
 	//then load the credentials
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -260,13 +281,15 @@ func initCredentials(credentialsDir string) (err error) {
 	// The public key is a part of the *rsa.PrivateKey struct
 	publicKey := privateKey.PublicKey
 
-	privateKeyPEMFile := filepath.Join(credentialsDir, "private.pem")
-	publicKeyPEMFile := filepath.Join(credentialsDir, "public.pem")
+	privateKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredsDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredsDir, "public.pem")
 
-	savePEMKey(privateKeyPEMFile, privateKey)
-	savePublicPEMKey(publicKeyPEMFile, publicKey)
+	fmt.Printf("saving creds at: %v and %v\n",privateKeyPEMFile,publicKeyPEMFile)
 
-	return nil
+	err = savePEMKey(privateKeyPEMFile, privateKey)
+	err = savePublicPEMKey(publicKeyPEMFile, publicKey)
+
+	return err
 }
 
 
@@ -281,18 +304,24 @@ func main() {
 		fmt.Printf("can not find home: %v\n",err)
 		os.Exit(1)
 	}
-	appHome := filepath.Join(home, ".pk", "creds")
-	err = os.MkdirAll(appHome, 0700)
+
+	appHomePath := filepath.Join(home,pk.AppDir)
+	appCredsPath := filepath.Join(appHomePath,pk.CredsDir)
+	appDBPath := filepath.Join(appHomePath,pk.DBDir)
+	err = os.MkdirAll(appCredsPath, 0777)
+	err = os.MkdirAll(appDBPath, 0777)
 	if err != nil {
 		fmt.Printf("can not create dir: %v\n",err)
 		os.Exit(1)
 	}
 
+	es, err := NewEncoderSigner(home)
 
-	fmt.Printf("%v\n",appHome)
-
-	_, err = NewCipher(appHome)
-
+	if err != nil {
+		fmt.Printf("could not create encoder signer due to %v\n",err)
+		panic(err)
+	}
+/*
 
 
 	// The GenerateKey method takes in a reader that returns random bits, and
@@ -314,19 +343,19 @@ func main() {
 
 	checkError(err)
 
-	rsaEnc := rsaEncoderSigner{
+	es := rsaEncoderSigner{
 		PublicKey:  pubkey,
 		PrivateKey: privkey,
 	}
-
-	bt,err := rsaEnc.Encode("mypasswordphrase")
+*/
+	bt,err := es.Encode("mypasswordphrase")
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Printf("%v\n",bt)
 
-	btStr, err := rsaEnc.Decode(bt)
+	btStr, err := es.Decode(bt)
 
 	if err != nil {
 		panic(err)
@@ -336,9 +365,9 @@ func main() {
 
 	msg := "message"
 
-	digest,signature, err := rsaEnc.Sign(msg)
+	digest,signature, err := es.Sign(msg)
 
-	err = rsaEnc.Verify("message",digest,signature)
+	err = es.Verify("message",digest,signature)
 
 	if err != nil {
 		panic(err)

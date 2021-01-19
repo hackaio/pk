@@ -6,12 +6,19 @@ import (
 	"time"
 )
 
+const (
+	AppDir   = "pk"
+	DBDir    = "db"
+	CredsDir = "creds"
+)
+
 var (
 	ErrNotFound          = errors.New("not found")
 	ErrCouldNotCreateAcc = errors.New("could not create account")
 	ErrPermissionDenied  = errors.New("permission denied")
+	ErrInternalError     = errors.New("internal error, possible db compromise")
+	ErrCriticalFailure   = errors.New("could not perform critical operation")
 )
-
 
 type Store interface {
 	Add(ctx context.Context, account Account) error
@@ -20,6 +27,7 @@ type Store interface {
 	Delete(ctx context.Context, name, username string) (err error)
 	Update(ctx context.Context, account Account) (acc Account, err error)
 }
+
 // Hasher specifies an API for generating hashes of an arbitrary textual
 // content.
 type Hasher interface {
