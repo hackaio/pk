@@ -32,11 +32,36 @@ type rsaEncoderSigner struct {
 var _ pk.Encoder = (*rsaEncoderSigner)(nil)
 var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
-func NewEncoder(pubKey rsa.PublicKey,privKey rsa.PrivateKey) pk.Encoder {
-	return &rsaEncoderSigner{
-		PublicKey:  &pubKey,
-		PrivateKey: &privKey,
+func NewEncoderSigner(credentialsDir string) (pk.EncoderSigner,error){
+
+	privateKeyPEMFile := filepath.Join(credentialsDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(credentialsDir, "public.pem")
+
+	_, err := os.Stat(privateKeyPEMFile)
+
+	if os.IsExist(err){
+		//create publicKey and privateKey
+		err1 :=  initCredentials(credentialsDir)
+		if err1 != nil {
+			return nil, err
+		}
 	}
+	_,err = os.Stat(publicKeyPEMFile)
+
+	if err != nil {
+		return nil, err
+	}
+
+
+	pubKey, privateKey, err := loadCredentials(credentialsDir)
+
+	if err != nil {
+		return nil, err
+	}
+	return &rsaEncoderSigner{
+		PublicKey:  pubKey,
+		PrivateKey: privateKey,
+	},nil
 }
 
 func (r rsaEncoderSigner) Encode(password string) ([]byte, error) {
@@ -141,15 +166,15 @@ func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) {
 		Bytes: asn1Bytes,
 	}
 
-	pemfile, err := os.Create(fileName)
+	pemFile, err := os.Create(fileName)
 	checkError(err)
-	defer pemfile.Close()
+	defer pemFile.Close()
 
-	err = pem.Encode(pemfile, pemkey)
+	err = pem.Encode(pemFile, pemkey)
 	checkError(err)
 }
 
-func loadPrivKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
+func privateKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
 
 	//All right! Now we have our RSA key pair created and exported
 	//to a PEM file.
@@ -160,13 +185,13 @@ func loadPrivKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
 		return nil, err
 	}
 
-	pemfileinfo, _ := privateKeyFile.Stat()
-	var size int64 = pemfileinfo.Size()
-	pembytes := make([]byte, size)
+	pemFileInfo, _ := privateKeyFile.Stat()
+	var size = pemFileInfo.Size()
+	pemBytes := make([]byte, size)
 	buffer := bufio.NewReader(privateKeyFile)
-	_, err = buffer.Read(pembytes)
-	data, _ := pem.Decode([]byte(pembytes))
-	privateKeyFile.Close()
+	_, err = buffer.Read(pemBytes)
+	data, _ := pem.Decode(pemBytes)
+	_ = privateKeyFile.Close()
 
 	privateKeyImported, err := x509.ParsePKCS1PrivateKey(data.Bytes)
 	if err != nil {
@@ -176,18 +201,18 @@ func loadPrivKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
 	return privateKeyImported, err
 }
 
-func loadPubKeyFromPEM(filename string)(key *rsa.PublicKey, err error){
+func pubKeyFromPEM(filename string)(key *rsa.PublicKey, err error){
 	keyFile, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
 
 	fileInfo, _ := keyFile.Stat()
-	var size int64 = fileInfo.Size()
+	var size = fileInfo.Size()
 	fileBytes := make([]byte, size)
 	buffer := bufio.NewReader(keyFile)
 	_, err = buffer.Read(fileBytes)
-	data, _ := pem.Decode([]byte(fileBytes))
+	data, _ := pem.Decode(fileBytes)
 	_ = keyFile.Close()
 
 	publicKeyFromFile, err := x509.ParsePKCS1PublicKey(data.Bytes)
@@ -204,6 +229,46 @@ func checkError(err error) {
 		os.Exit(1)
 	}
 }
+
+func loadCredentials(credentialsDir string) (
+	publicKey *rsa.PublicKey, privateKey *rsa.PrivateKey, err error) {
+	privateKeyPEMFile := filepath.Join(credentialsDir, "private.pem")
+	privateKey, err = privateKeyFromPEM(privateKeyPEMFile)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKeyPEMFile := filepath.Join(credentialsDir, "public.pem")
+	publicKey, err = pubKeyFromPEM(publicKeyPEMFile)
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return publicKey, privateKey, nil
+
+}
+
+func initCredentials(credentialsDir string) (err error) {
+	//Check if File exists if not create the credentials and save them
+	//then load the credentials
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return err
+	}
+
+	// The public key is a part of the *rsa.PrivateKey struct
+	publicKey := privateKey.PublicKey
+
+	privateKeyPEMFile := filepath.Join(credentialsDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(credentialsDir, "public.pem")
+
+	savePEMKey(privateKeyPEMFile, privateKey)
+	savePublicPEMKey(publicKeyPEMFile, publicKey)
+
+	return nil
+}
+
 
 
 
@@ -244,8 +309,8 @@ func main() {
 	savePublicPEMKey("public.pem",publicKey)
 
 
-	privkey, err := loadPrivKeyFromPEM("private.pem")
-	pubkey, err := loadPubKeyFromPEM("public.pem")
+	privkey, err := privateKeyFromPEM("private.pem")
+	pubkey, err := pubKeyFromPEM("public.pem")
 
 	checkError(err)
 
@@ -283,4 +348,6 @@ func main() {
 	// signature is valid
 	fmt.Println("signature verified")
 }
+
+
 
