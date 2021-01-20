@@ -17,16 +17,20 @@ package cli
 
 import (
 	"fmt"
+	"github.com/hackaio/pk"
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
+
 var cfgFile string
 var appHome string
+var appDBDir string
+var appCredDir string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -71,12 +75,32 @@ func initConfig() {
 	} else {
 		// Find home directory.
 		home, err := homedir.Dir()
-		appHome = filepath.Join(home, ".pk", "database")
-		err = os.Mkdir(appHome, 0600)
+
+		//create application home directory at $HOME/pk
+		appHome = filepath.Join(home, pk.AppDir)
+		err = os.MkdirAll(appHome, 0777)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		//create databases directory at $HOME/pk/db
+		appDBDir = filepath.Join(appHome, pk.DBDir)
+		err = os.MkdirAll(appDBDir, 0777)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+
+		//create credentials directory at $HOME/pk/creds
+		appCredDir = filepath.Join(appHome, pk.CredDir)
+		err = os.MkdirAll(appDBDir, 0777)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 
 		// Search config in home directory with name ".pk" (without extension).
 		viper.AddConfigPath(home)

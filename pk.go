@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	AppDir   = "pk"
-	DBDir    = "db"
-	CredsDir = "creds"
+	AppDir  = "pk"
+	DBDir   = "db"
+	CredDir = "creds"
 )
 
 var (
@@ -19,14 +19,6 @@ var (
 	ErrInternalError     = errors.New("internal error, possible db compromise")
 	ErrCriticalFailure   = errors.New("could not perform critical operation")
 )
-
-type Store interface {
-	Add(ctx context.Context, account Account) error
-	Get(ctx context.Context, name, username string) (account Account, err error)
-	List(ctx context.Context) (accounts []Account, err error)
-	Delete(ctx context.Context, name, username string) (err error)
-	Update(ctx context.Context, account Account) (acc Account, err error)
-}
 
 // Hasher specifies an API for generating hashes of an arbitrary textual
 // content.
@@ -61,6 +53,17 @@ type Account struct {
 	Email    string `json:"email,omitempty"`
 	Password string `json:"password,omitempty"`
 	Created  string `json:"created,omitempty"`
+}
+
+type DBAccount struct {
+	Name      string `json:"name,omitempty"`
+	UserName  string `json:"username,omitempty"`
+	Email     string `json:"email,omitempty"`
+	Hash      []byte `json:"hash,omitempty"`
+	Encoded   []byte `json:"encoded,omitempty"`
+	Digest    []byte `json:"digest,omitempty"`
+	Signature []byte `json:"signature,omitempty"`
+	Created   string `json:"created,omitempty"`
 }
 
 type RegisterRequest struct {
@@ -158,20 +161,34 @@ type PasswordKeeper interface {
 
 type PasswordStore interface {
 	CheckAccount(ctx context.Context, name, username string) (err error)
-	Add(ctx context.Context, account Account) (err error)
-	Get(ctx context.Context, name, username string) (account Account, err error)
+	AddOwner(ctx context.Context,account Account)(err error)
+	Add(ctx context.Context, account DBAccount) (err error)
+	Get(ctx context.Context, name, username string) (account DBAccount, err error)
+	GetOwner(ctx context.Context, name, username string) (account Account, err error)
 	Delete(ctx context.Context, name, username string) (err error)
-	Update(ctx context.Context, name, username string, account Account) (err error)
-	List(ctx context.Context) (accounts []Account, err error)
+	Update(ctx context.Context, name, username string, account DBAccount) (err error)
+	List(ctx context.Context) (accounts []DBAccount, err error)
 }
 
 type passwordKeeper struct {
 	hasher    Hasher
 	passwords PasswordStore
 	tokenizer Tokenizer
+	es        EncoderSigner
 }
 
 var _ PasswordKeeper = (*passwordKeeper)(nil)
+
+func NewPasswordKeeper(
+	hasher Hasher, store PasswordStore,
+	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
+	return &passwordKeeper{
+		hasher:    hasher,
+		passwords: store,
+		tokenizer: tokenizer,
+		es:        es,
+	}
+}
 
 func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
 	password, err := p.hasher.Hash(request.Password)
@@ -188,7 +205,7 @@ func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (
 		Created:  created,
 	}
 
-	err = p.passwords.Add(ctx, dbAccount)
+	err = p.passwords.AddOwner(ctx, dbAccount)
 
 	if err != nil {
 		return ErrResponse{Err: err.Error()}
@@ -200,7 +217,7 @@ func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (
 func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
 	username := request.UserName
 	password := request.Password
-	account, err := p.passwords.Get(ctx, "master", username)
+	account, err := p.passwords.GetOwner(ctx, "master", username)
 	if err != nil {
 		return LoginResponse{
 			Token: "",

@@ -16,10 +16,32 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
+	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/cli"
+	"github.com/mitchellh/go-homedir"
+	"os"
+	"path/filepath"
 )
 
 func main() {
+
+	// Find home directory.
+	home, err := homedir.Dir()
+	if err != nil {
+		fmt.Printf("can not find home: %v\n",err)
+		os.Exit(1)
+	}
+
+	appHomePath := filepath.Join(home,pk.AppDir)
+	appCredPath := filepath.Join(appHomePath,pk.CredDir)
+	appDBPath := filepath.Join(appHomePath,pk.DBDir)
+	err = os.MkdirAll(appCredPath, 0777)
+	err = os.MkdirAll(appDBPath, 0777)
+	if err != nil {
+		fmt.Printf("can not create dir: %v\n",err)
+		os.Exit(1)
+	}
 
 	/*hasher := bcrypt.New()
 	store, err := sqlite.NewStore("sgsgsg")

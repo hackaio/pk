@@ -17,11 +17,7 @@ package cli
 
 import (
 	"fmt"
-	"github.com/hackaio/pk"
-	"github.com/hackaio/pk/bcrypt"
 	"github.com/hackaio/pk/sqlite"
-	"path/filepath"
-
 	"github.com/spf13/cobra"
 )
 
@@ -36,24 +32,22 @@ var (
 )
 
 func configureCommands() {
-	dbpath := filepath.Join(appHome, "accounts.db")
-	hasher := bcrypt.New()
-	store, err := sqlite.NewStore(dbpath)
+
+	_, err := sqlite.NewStore(appDBDir)
 	if err != nil {
 		panic(err)
 	}
 
-	authMiddleware := pk.AuthMiddleware("", "")
-	middlewares := []pk.Middleware{authMiddleware}
-	pkInstance := pk.NewPKService(store, hasher, middlewares)
-	wr := NewWrapper(pkInstance)
+
 
 	initCmd = &cobra.Command{
 		Use:   "init",
 		Short: "initialize pk",
 		Long:  `this command should be run the first time to set up pk on your machine`,
 
-		Run: wr.start,
+		Run: func(cmd *cobra.Command, args []string) {
+
+		},
 	}
 
 	deleteCmd = &cobra.Command{

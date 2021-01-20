@@ -30,7 +30,7 @@ var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
 func NewEncoderSigner(homeDir string) (es pk.EncoderSigner,err error){
 
-	credsDir := filepath.Join(homeDir,pk.AppDir,pk.CredsDir)
+	credsDir := filepath.Join(homeDir,pk.AppDir,pk.CredDir)
 	privateKeyPEMFile := filepath.Join(credsDir, "private.pem")
 	publicKeyPEMFile := filepath.Join(credsDir, "public.pem")
 
@@ -281,8 +281,8 @@ func initCredentials(homeDir string) (err error) {
 	// The public key is a part of the *rsa.PrivateKey struct
 	publicKey := privateKey.PublicKey
 
-	privateKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredsDir, "private.pem")
-	publicKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredsDir, "public.pem")
+	privateKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredDir, "public.pem")
 
 	fmt.Printf("saving creds at: %v and %v\n",privateKeyPEMFile,publicKeyPEMFile)
 
@@ -306,7 +306,7 @@ func main() {
 	}
 
 	appHomePath := filepath.Join(home,pk.AppDir)
-	appCredsPath := filepath.Join(appHomePath,pk.CredsDir)
+	appCredsPath := filepath.Join(appHomePath,pk.CredDir)
 	appDBPath := filepath.Join(appHomePath,pk.DBDir)
 	err = os.MkdirAll(appCredsPath, 0777)
 	err = os.MkdirAll(appDBPath, 0777)
