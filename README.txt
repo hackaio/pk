@@ -48,6 +48,7 @@ To install certificates to System Certs Pool
 Why pk?
 ========
 I just made the tool as a playground to be able to experiment with databases,
-cryptography, linux env, command line tools, runtime complication etc etc etc
+authentication and authorization, cryptography, linux env, command line tools,
+runtime complication etc etc etc
 
 If you are getting started with golang this may be a good place to experiment
