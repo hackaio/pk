@@ -16,6 +16,7 @@ package pk
 import (
 	"context"
 	"log"
+	"time"
 )
 
 type loggingMiddleware struct {
@@ -30,30 +31,71 @@ func LoggingMiddleware(logger *log.Logger) Middleware {
 }
 
 func (l loggingMiddleware) Register(ctx context.Context, request RegisterRequest) (err ErrResponse) {
+	defer func(begin time.Time) {
+		l.logger.Printf("method: register took: %v to register user with id: %v and return err: %v\n",
+			time.Since(begin),request.Username,err.Err)
+	}(time.Now())
 
-	panic("implement me")
+	err = l.next.Register(ctx,request)
+	return
 }
 
 func (l loggingMiddleware) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: login took: %v to generate token for user with id: %v and return err: %v\n",
+			time.Since(begin),request.UserName,response.Err)
+	}(time.Now())
+
+	response = l.next.Login(ctx,request)
+	return
 }
 
 func (l loggingMiddleware) Add(ctx context.Context, request AddRequest) (err ErrResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: add took: %v to add new user with id: %v and return err: %v\n",
+			time.Since(begin),request.UserName,err.Err)
+	}(time.Now())
+
+	err = l.next.Add(ctx,request)
+	return
 }
 
 func (l loggingMiddleware) Get(ctx context.Context, request GetRequest) (response GetResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: get took: %v to retrieve user with id: %v \n",
+			time.Since(begin),request.UserName)
+	}(time.Now())
+
+	response = l.next.Get(ctx,request)
+	return
 }
 
 func (l loggingMiddleware) Delete(ctx context.Context, request GetRequest) (err ErrResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: delete took: %v to delete user with id: %v and returned err : %v\n",
+			time.Since(begin),request.UserName,err.Err)
+	}(time.Now())
+
+	err = l.next.Delete(ctx,request)
+	return
 }
 
 func (l loggingMiddleware) List(ctx context.Context) (list ListResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: list took: %v to retrieve all users (%v) and returned with err: %v \n",
+			time.Since(begin),len(list.Accounts),list.Err)
+	}(time.Now())
+
+	list = l.next.List(ctx)
+	return
 }
 
 func (l loggingMiddleware) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
-	panic("implement me")
+	defer func(begin time.Time) {
+		l.logger.Printf("method: update took: %v to update acc with username: %v \n",
+			time.Since(begin),request.Username)
+	}(time.Now())
+
+	response = l.next.Update(ctx,request)
+	return
 }

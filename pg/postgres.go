@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/pkg/errors"
 	_ "github.com/lib/pq"
 )
 
@@ -43,6 +44,58 @@ func Connect() (*sql.DB, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	//type Account struct {
+	//	Name     string `json:"name,omitempty"`
+	//	UserName string `json:"username,omitempty"`
+	//	Email    string `json:"email,omitempty"`
+	//	Password string `json:"password,omitempty"`
+	//	Created  string `json:"created,omitempty"`
+	//}
+	//
+	//type DBAccount struct {
+	//	Name      string `json:"name,omitempty"`
+	//	UserName  string `json:"username,omitempty"`
+	//	Email     string `json:"email,omitempty"`
+	//	Hash      []byte `json:"hash,omitempty"`
+	//	Encoded   []byte `json:"encoded,omitempty"`
+	//	Digest    []byte `json:"digest,omitempty"`
+	//	Signature []byte `json:"signature,omitempty"`
+	//	Created   string `json:"created,omitempty"`
+	//}
+
+	createMasterDb := `
+CREATE TABLE IF NOT EXISTS masters(
+    name VARCHAR (200) NOT NULL,
+    username VARCHAR (200) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    password VARCHAR(200) NOT NULL,
+    created VARCHAR(100) NOT NULL,
+    PRIMARY KEY (name,username)
+)
+`
+
+	createAccountsDb := `
+CREATE TABLE IF NOT EXISTS accounts(
+    name VARCHAR (200) NOT NULL,
+    username VARCHAR (200) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    hash VARCHAR (300) NOT NULL UNIQUE,
+    encoded VARCHAR (300) NOT NULL UNIQUE,
+    digest VARCHAR (300) NOT NULL UNIQUE,
+    signature VARCHAR (300) NOT NULL UNIQUE,
+    created VARCHAR(100) NOT NULL,
+    PRIMARY KEY (name,username)
+)
+`
+
+	_, err = db.Exec(createMasterDb)
+	_, err = db.Exec(createAccountsDb)
+
+	if err != nil {
+		errMsg := errors.New("could not create tables")
+		return nil, errors.Wrap(err,errMsg)
 	}
 
 	return db, nil
