@@ -52,3 +52,10 @@ authentication and authorization, cryptography, linux env, command line tools,
 runtime complication etc etc etc
 
 If you are getting started with golang this may be a good place to experiment
+
+
+
+Disclaimer
+===========
+Use at your own risk. The developer has no control or responsibilities for any
+results good/bad when this tool is used by anyone for any purpose.
