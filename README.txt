@@ -1,21 +1,30 @@
 pk
 =========
 
-A simple command line tool to store your passwords and retrieve them securely
+Usage:
+  pk [command]
 
-The tool uses postgres (later implementation will use embedded sqlite)
+Available Commands:
+  add         add new details to db
+  delete      delete details of an account
+  get         get account details
+  help        Help about any command
+  init        initialize pk
+  list        list the details of all accounts
+  login       generate auth token
+  update      update account details
 
-Available Commands
-===================
+Flags:
+      --config string       config file (default is $HOME/.pk.yaml)
+  -e, --email string        email of the account
+  -h, --help                help for pk
+  -n, --name string         name of the account (e.g github)
+  -p, --passphrase string   the account password
+  -t, --token string        auth token
+  -u, --username string     username of the account (e.g alicebob)
+  -v, --verbose             verbose command output
 
-- pk init    initialize app
-- pk login   generate token
-- pk add     add new password
-- pk delete  delete a password entry
-- pk list    retrieve all passwords
-- pk get     get a single account details
-- pk update  update a certain entry
-
+Use "pk [command] --help" for more information about a command.
 
 
 Implementation Details
