@@ -22,17 +22,13 @@ import (
 )
 
 var cfgFile string
+var verboseResp bool
+var tokenStr string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "pk",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "A simple command line tool to store and retrieve passwords",
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cli *cobra.Command, args []string) { },
@@ -50,15 +46,14 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
+	rootCmd.PersistentFlags().BoolVarP(&verboseResp,"verbose", "v", false, "verbose command output")
+	rootCmd.PersistentFlags().StringVarP(&tokenStr,"token","t","","auth token")
+	rootCmd.PersistentFlags().StringP("name","n","","name of the account (e.g github)")
+	rootCmd.PersistentFlags().StringP("username","u","","username of the account (e.g alicebob)")
+	rootCmd.PersistentFlags().StringP("email","e","","email of the account")
+	rootCmd.PersistentFlags().StringP("passphrase","p","","the account password")
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
 // initConfig reads in config file and ENV variables if set.
