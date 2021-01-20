@@ -16,7 +16,7 @@ var (
 
 type claims struct {
 	jwt.StandardClaims
-	IssuerID string  `json:"issuer_id,omitempty"`
+	IssuerID string `json:"issuer_id,omitempty"`
 }
 
 func (c claims) Valid() error {
@@ -29,10 +29,10 @@ func (c claims) Valid() error {
 
 func (c claims) toToken() pk.Token {
 	token := pk.Token{
-		ID:        c.Id,
-		IssuerID:  c.IssuerID,
-		Subject:   c.Subject,
-		IssuedAt:  time.Unix(c.IssuedAt,0).UTC(),
+		ID:       c.Id,
+		IssuerID: c.IssuerID,
+		Subject:  c.Subject,
+		IssuedAt: time.Unix(c.IssuedAt, 0).UTC(),
 	}
 
 	if c.ExpiresAt != 0 {
@@ -41,7 +41,6 @@ func (c claims) toToken() pk.Token {
 
 	return token
 }
-
 
 type tokenizer struct {
 	secret string
@@ -94,5 +93,3 @@ func (t tokenizer) Parse(token string) (pk.Token, error) {
 	return c.toToken(), nil
 
 }
-
-

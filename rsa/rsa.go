@@ -18,28 +18,26 @@ import (
 	"path/filepath"
 )
 
-
 type rsaEncoderSigner struct {
-	PublicKey *rsa.PublicKey
+	PublicKey  *rsa.PublicKey
 	PrivateKey *rsa.PrivateKey
 }
-
 
 var _ pk.Encoder = (*rsaEncoderSigner)(nil)
 var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
-func NewEncoderSigner(homeDir string) (es pk.EncoderSigner,err error){
+func NewEncoderSigner(homeDir string) (es pk.EncoderSigner, err error) {
 
-	credsDir := filepath.Join(homeDir,pk.AppDir,pk.CredDir)
+	credsDir := filepath.Join(homeDir, pk.AppDir, pk.CredDir)
 	privateKeyPEMFile := filepath.Join(credsDir, "private.pem")
 	publicKeyPEMFile := filepath.Join(credsDir, "public.pem")
 
-	fmt.Printf("scanning creds at %v and %v ..... \n",privateKeyPEMFile,publicKeyPEMFile)
+	fmt.Printf("scanning creds at %v and %v ..... \n", privateKeyPEMFile, publicKeyPEMFile)
 
-	_,errNoPrivatePEMFile := os.Stat(privateKeyPEMFile)
-	_,errNoPubKeyPEMFile := os.Stat(publicKeyPEMFile)
+	_, errNoPrivatePEMFile := os.Stat(privateKeyPEMFile)
+	_, errNoPubKeyPEMFile := os.Stat(publicKeyPEMFile)
 
-	if errNoPrivatePEMFile == nil && errNoPubKeyPEMFile == nil{
+	if errNoPrivatePEMFile == nil && errNoPubKeyPEMFile == nil {
 		fmt.Printf("creds files exists... load em up\n")
 		pubKey, privateKey, err := loadCredentials(credsDir)
 		es = rsaEncoderSigner{
@@ -50,7 +48,6 @@ func NewEncoderSigner(homeDir string) (es pk.EncoderSigner,err error){
 		if err != nil {
 			return nil, err
 		}
-
 
 	} else if os.IsNotExist(errNoPubKeyPEMFile) || os.IsNotExist(errNoPrivatePEMFile) {
 		fmt.Printf("creds files do not exists... time to craft\n")
@@ -65,17 +62,17 @@ func NewEncoderSigner(homeDir string) (es pk.EncoderSigner,err error){
 	return &rsaEncoderSigner{
 		PublicKey:  pubKey,
 		PrivateKey: privateKey,
-	},nil
+	}, nil
 }
 
 func (r rsaEncoderSigner) Encode(password string) ([]byte, error) {
 	encryptedBytes, err := rsa.EncryptOAEP(
-			sha256.New(),
-			rand.Reader,
-			r.PublicKey,
-			[]byte(password),
-			[]byte("passwords"),
-		)
+		sha256.New(),
+		rand.Reader,
+		r.PublicKey,
+		[]byte(password),
+		[]byte("passwords"),
+	)
 
 	return encryptedBytes, err
 }
@@ -86,13 +83,13 @@ func (r rsaEncoderSigner) Decode(encoded []byte) (string, error) {
 	// The OEAPOptions in the end signify that we encrypted the data using OEAP, and that we used
 	// SHA256 to hash the input.
 	decryptedBytes, err := r.PrivateKey.
-		Decrypt(nil, encoded, &rsa.OAEPOptions{Hash: crypto.SHA256,Label: []byte("passwords")})
+		Decrypt(nil, encoded, &rsa.OAEPOptions{Hash: crypto.SHA256, Label: []byte("passwords")})
 
 	return string(decryptedBytes), err
 
 }
 
-func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte, err error) {
+func (r rsaEncoderSigner) Sign(password string) (digest []byte, signature []byte, err error) {
 	msg := []byte(password)
 
 	// Before signing, we need to hash our message
@@ -100,7 +97,7 @@ func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte
 	msgHash := sha256.New()
 	_, err = msgHash.Write(msg)
 	if err != nil {
-		return nil,nil, errors.Wrap(err, pk.ErrCriticalFailure)
+		return nil, nil, errors.Wrap(err, pk.ErrCriticalFailure)
 	}
 	digest = msgHash.Sum(nil)
 
@@ -115,21 +112,20 @@ func (r rsaEncoderSigner) Sign(password string) (digest []byte ,signature []byte
 		nil)
 
 	if err != nil {
-		return nil,nil, errors.Wrap(err,pk.ErrCriticalFailure)
+		return nil, nil, errors.Wrap(err, pk.ErrCriticalFailure)
 	}
 
-	return digest,signature,nil
+	return digest, signature, nil
 }
 
 func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature []byte) (err error) {
 
 	digest, _, err := r.Sign(password)
 
-
 	//Compares the digest of recovered password and that retrieved from db
-	comp := bytes.Compare(digest,dbDigest)
+	comp := bytes.Compare(digest, dbDigest)
 
-	if comp != 0{
+	if comp != 0 {
 		return pk.ErrInternalError
 	}
 
@@ -146,12 +142,11 @@ func (r rsaEncoderSigner) Verify(password string, dbDigest []byte, dbSignature [
 
 }
 
-
 func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 	outFile, err := os.Create(fileName)
 	if err != nil {
-		errMsg := errors.New(fmt.Sprintf("could not create %v file\n",fileName))
-		return errors.Wrap(errMsg,err)
+		errMsg := errors.New(fmt.Sprintf("could not create %v file\n", fileName))
+		return errors.Wrap(errMsg, err)
 	}
 
 	defer outFile.Close()
@@ -164,17 +159,17 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 	err = pem.Encode(outFile, privateKey)
 	if err != nil {
 		errMsg := errors.New("could not encode file to pem format")
-		return errors.Wrap(errMsg,err)
+		return errors.Wrap(errMsg, err)
 	}
 
 	return nil
 }
 
-func savePublicPEMKey(fileName string, pubkey rsa.PublicKey)(err error) {
+func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) (err error) {
 	asn1Bytes, err := asn1.Marshal(pubkey)
 	if err != nil {
 		errMsg := errors.New("could not marshal the public key bytes")
-		return errors.Wrap(errMsg,err)
+		return errors.Wrap(errMsg, err)
 	}
 
 	var pemkey = &pem.Block{
@@ -184,21 +179,21 @@ func savePublicPEMKey(fileName string, pubkey rsa.PublicKey)(err error) {
 
 	pemFile, err := os.Create(fileName)
 	if err != nil {
-		errMsg := errors.New(fmt.Sprintf("could not create %v file\n",fileName))
-		return errors.Wrap(errMsg,err)
+		errMsg := errors.New(fmt.Sprintf("could not create %v file\n", fileName))
+		return errors.Wrap(errMsg, err)
 	}
 	defer pemFile.Close()
 
 	err = pem.Encode(pemFile, pemkey)
 	if err != nil {
-		errMsg := errors.New(fmt.Sprintf("could not encode %v file to pem format\n",fileName))
-		return errors.Wrap(errMsg,err)
+		errMsg := errors.New(fmt.Sprintf("could not encode %v file to pem format\n", fileName))
+		return errors.Wrap(errMsg, err)
 	}
 
 	return nil
 }
 
-func privateKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
+func privateKeyFromPEM(filename string) (key *rsa.PrivateKey, err error) {
 
 	//All right! Now we have our RSA key pair created and exported
 	//to a PEM file.
@@ -225,7 +220,7 @@ func privateKeyFromPEM(filename string)(key *rsa.PrivateKey, err error){
 	return privateKeyImported, err
 }
 
-func pubKeyFromPEM(filename string)(key *rsa.PublicKey, err error){
+func pubKeyFromPEM(filename string) (key *rsa.PublicKey, err error) {
 	keyFile, err := os.Open(filename)
 	if err != nil {
 		return nil, err
@@ -246,8 +241,6 @@ func pubKeyFromPEM(filename string)(key *rsa.PublicKey, err error){
 
 	return publicKeyFromFile, err
 }
-
-
 
 func loadCredentials(credentialsDir string) (
 	publicKey *rsa.PublicKey, privateKey *rsa.PrivateKey, err error) {
@@ -281,10 +274,10 @@ func initCredentials(homeDir string) (err error) {
 	// The public key is a part of the *rsa.PrivateKey struct
 	publicKey := privateKey.PublicKey
 
-	privateKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredDir, "private.pem")
-	publicKeyPEMFile := filepath.Join(homeDir,pk.AppDir,pk.CredDir, "public.pem")
+	privateKeyPEMFile := filepath.Join(homeDir, pk.AppDir, pk.CredDir, "private.pem")
+	publicKeyPEMFile := filepath.Join(homeDir, pk.AppDir, pk.CredDir, "public.pem")
 
-	fmt.Printf("saving creds at: %v and %v\n",privateKeyPEMFile,publicKeyPEMFile)
+	fmt.Printf("saving creds at: %v and %v\n", privateKeyPEMFile, publicKeyPEMFile)
 
 	err = savePEMKey(privateKeyPEMFile, privateKey)
 	err = savePublicPEMKey(publicKeyPEMFile, publicKey)
@@ -292,68 +285,64 @@ func initCredentials(homeDir string) (err error) {
 	return err
 }
 
-
-
-
-
 func main() {
 
 	// Find home directory.
 	home, err := homedir.Dir()
 	if err != nil {
-		fmt.Printf("can not find home: %v\n",err)
+		fmt.Printf("can not find home: %v\n", err)
 		os.Exit(1)
 	}
 
-	appHomePath := filepath.Join(home,pk.AppDir)
-	appCredsPath := filepath.Join(appHomePath,pk.CredDir)
-	appDBPath := filepath.Join(appHomePath,pk.DBDir)
+	appHomePath := filepath.Join(home, pk.AppDir)
+	appCredsPath := filepath.Join(appHomePath, pk.CredDir)
+	appDBPath := filepath.Join(appHomePath, pk.DBDir)
 	err = os.MkdirAll(appCredsPath, 0777)
 	err = os.MkdirAll(appDBPath, 0777)
 	if err != nil {
-		fmt.Printf("can not create dir: %v\n",err)
+		fmt.Printf("can not create dir: %v\n", err)
 		os.Exit(1)
 	}
 
 	es, err := NewEncoderSigner(home)
 
 	if err != nil {
-		fmt.Printf("could not create encoder signer due to %v\n",err)
+		fmt.Printf("could not create encoder signer due to %v\n", err)
 		panic(err)
 	}
-/*
+	/*
 
 
-	// The GenerateKey method takes in a reader that returns random bits, and
-	// the number of bits
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		// The GenerateKey method takes in a reader that returns random bits, and
+		// the number of bits
+		privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+		if err != nil {
+			panic(err)
+		}
+
+		// The public key is a part of the *rsa.PrivateKey struct
+		publicKey := privateKey.PublicKey
+
+		savePEMKey("private.pem",privateKey)
+		savePublicPEMKey("public.pem",publicKey)
+
+
+		privkey, err := privateKeyFromPEM("private.pem")
+		pubkey, err := pubKeyFromPEM("public.pem")
+
+		checkError(err)
+
+		es := rsaEncoderSigner{
+			PublicKey:  pubkey,
+			PrivateKey: privkey,
+		}
+	*/
+	bt, err := es.Encode("mypasswordphrase")
 	if err != nil {
 		panic(err)
 	}
 
-	// The public key is a part of the *rsa.PrivateKey struct
-	publicKey := privateKey.PublicKey
-
-	savePEMKey("private.pem",privateKey)
-	savePublicPEMKey("public.pem",publicKey)
-
-
-	privkey, err := privateKeyFromPEM("private.pem")
-	pubkey, err := pubKeyFromPEM("public.pem")
-
-	checkError(err)
-
-	es := rsaEncoderSigner{
-		PublicKey:  pubkey,
-		PrivateKey: privkey,
-	}
-*/
-	bt,err := es.Encode("mypasswordphrase")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("%v\n",bt)
+	fmt.Printf("%v\n", bt)
 
 	btStr, err := es.Decode(bt)
 
@@ -361,13 +350,13 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("%v\n",btStr)
+	fmt.Printf("%v\n", btStr)
 
 	msg := "message"
 
-	digest,signature, err := es.Sign(msg)
+	digest, signature, err := es.Sign(msg)
 
-	err = es.Verify("message",digest,signature)
+	err = es.Verify("message", digest, signature)
 
 	if err != nil {
 		panic(err)
@@ -377,6 +366,3 @@ func main() {
 	// signature is valid
 	fmt.Println("signature verified")
 }
-
-
-

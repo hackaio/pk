@@ -161,7 +161,7 @@ type PasswordKeeper interface {
 
 type PasswordStore interface {
 	CheckAccount(ctx context.Context, name, username string) (err error)
-	AddOwner(ctx context.Context,account Account)(err error)
+	AddOwner(ctx context.Context, account Account) (err error)
 	Add(ctx context.Context, account DBAccount) (err error)
 	Get(ctx context.Context, name, username string) (account DBAccount, err error)
 	GetOwner(ctx context.Context, name, username string) (account Account, err error)

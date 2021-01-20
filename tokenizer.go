@@ -10,13 +10,13 @@ type Token struct {
 	ExpiresAt time.Time
 }
 
-func NewToken(id string)Token  {
+func NewToken(id string) Token {
 	return Token{
 		ID:        id,
 		IssuerID:  "pk123456789",
 		Subject:   "pk-master-auth",
 		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(10*time.Minute),
+		ExpiresAt: time.Now().Add(10 * time.Minute),
 	}
 }
 
@@ -28,4 +28,3 @@ type Tokenizer interface {
 	// Parse extracts Token data from string token.
 	Parse(string) (Token, error)
 }
-

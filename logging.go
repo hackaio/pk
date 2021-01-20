@@ -5,7 +5,6 @@ import (
 	"log"
 )
 
-
 type loggingMiddleware struct {
 	logger *log.Logger
 	next   PasswordKeeper
@@ -18,6 +17,7 @@ func LoggingMiddleware(logger *log.Logger) Middleware {
 }
 
 func (l loggingMiddleware) Register(ctx context.Context, request RegisterRequest) (err ErrResponse) {
+
 	panic("implement me")
 }
 
@@ -44,4 +44,3 @@ func (l loggingMiddleware) List(ctx context.Context) (list ListResponse) {
 func (l loggingMiddleware) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
 	panic("implement me")
 }
-

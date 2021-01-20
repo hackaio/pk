@@ -4,9 +4,9 @@ type Middleware func(keeper PasswordKeeper) PasswordKeeper
 
 func InitWithMiddlewares(
 	hasher Hasher, store PasswordStore,
-	tokenizer Tokenizer, es EncoderSigner, middlewares [] Middleware) PasswordKeeper {
+	tokenizer Tokenizer, es EncoderSigner, middlewares []Middleware) PasswordKeeper {
 
-	var keeper = NewPasswordKeeper(hasher,store,tokenizer,es)
+	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
 
 	for _, middleware := range middlewares {
 		keeper = middleware(keeper)
