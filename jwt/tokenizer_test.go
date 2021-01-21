@@ -11,33 +11,29 @@
  * limitations under the License.
  */
 
-package pk
+package jwt
 
-import "time"
+import (
+	"fmt"
+	"github.com/hackaio/pk"
+	"testing"
+)
 
-type Token struct {
-	ID        string
-	IssuerID  string
-	Subject   string
-	IssuedAt  time.Time
-	ExpiresAt time.Time
-}
-
-func NewToken(id string) Token {
-	return Token{
-		ID:        id,
-		IssuerID:  "pk-tokenizer",
-		Subject:   "pk-master-auth",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(10 * time.Minute),
+func TestIssueToken(t *testing.T) {
+	to := NewTokenizer("pk-jwt-tokenizer")
+	token := pk.NewToken("piusalfred")
+	tStr,err := to.Issue(token)
+	if err != nil {
+		panic(err)
 	}
+
+	fmt.Printf("token : %v\n",tStr)
+
+	tokenRecovered, err := to.Parse(tStr)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("id : %v issuedAt: %v",tokenRecovered.ID,tokenRecovered.IssuedAt)
 }
 
-// Tokenizer specifies API for encoding and decoding between string and Key.
-type Tokenizer interface {
-	// Issue converts Token to its string representation.
-	Issue(token Token) (string, error)
-
-	// Parse extracts Token data from string token.
-	Parse(string) (Token, error)
-}
