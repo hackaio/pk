@@ -13,30 +13,123 @@
 package cli
 
 import (
+	"context"
+	"fmt"
+	"github.com/hackaio/pk"
 	"github.com/spf13/cobra"
+	"os"
 )
 
-// initCmd represents the init command
-var initCmd = &cobra.Command{
-	Use:   "init",
-	Short: "initialize pk",
-	Long: `init should be run firstly before anything after installation`,
-	Example: "pk init --username <username> --email <email> --password <password>",
-	Run: func(cmd *cobra.Command, args []string) {
-		logUsage(cmd.Example)
-	},
+type Command int
+
+const (
+	Init Command = iota
+	Register
+	Login
+	Add
+	Get
+	Delete
+	List
+	Update
+)
+
+
+
+
+type commander struct {
+	keeper pk.PasswordKeeper
 }
 
-func init() {
-	rootCmd.AddCommand(initCmd)
+func (comm *commander) RunCommand(command Command) func(cmd *cobra.Command, args []string) {
+	switch command {
 
-	// Here you will define your flags and configuration settings.
+	case Init:
+		return func(cmd *cobra.Command, args []string) {
+			username,err := cmd.Flags().GetString("username")
+			email,err := cmd.Flags().GetString("email")
+			password,err := cmd.Flags().GetString("password")
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// initCmd.PersistentFlags().String("foo", "", "A help for foo")
+			if err != nil{
+				//logError(err)
+				os.Exit(1)
+			}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// initCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+			if username == "" || email == "" || password == ""{
+				logUsage(cmd.Example)
+				os.Exit(1)
+			}
+			request := pk.RegisterRequest{
+				Username: username,
+				Email:    email,
+				Password: password,
+			}
+			errResponse := comm.keeper.Register(context.Background(), request)
+
+			if errResponse.Err != "" {
+				//logError(errors.New(errResponse.Err))
+			}
+
+			logOK()
+		}
+
+	case Login:
+		return func(cmd *cobra.Command, args []string) {
+			username,err := cmd.Flags().GetString("username")
+			password,err := cmd.Flags().GetString("password")
+
+			if err != nil{
+				//logError(err)
+				fmt.Printf("error: %v\n",err)
+				os.Exit(1)
+			}
+
+			if username == "" || password == ""{
+				logUsage(cmd.Example)
+				os.Exit(1)
+			}
+			request := pk.LoginRequest{
+				UserName: username,
+				Password: password,
+			}
+			response := comm.keeper.Login(context.Background(),request)
+			/*if response.Err != nil {
+				//logError(err)
+				fmt.Printf("error: %v\n",err)
+				os.Exit(1)
+			}*/
+
+			logMessage("token",response.Token)
+		}
+
+	default:
+		return func(cmd *cobra.Command, args []string) {
+			logUsage("this should not happen")
+		}
+	}
+}
+
+func NewInitCommand(comm commander)*cobra.Command {
+	var initCmd = &cobra.Command{
+		Use:   "init",
+		Short: "initialize pk",
+		Long: `init should be run firstly before anything after installation`,
+		Example: "pk init --username <username> --email <email> --password <password>",
+		Run: comm.RunCommand(Init),
+	}
+	
+	return initCmd
+}
+
+func NewLoginCommand(comm commander)*cobra.Command{
+	// loginCmd represents the login command
+	var loginCmd = &cobra.Command{
+		Use:   "login",
+		Short: "generate auth token",
+		Example: "pk login -u <username> -p <password>",
+		Long: `generates a jwt token string after the user has supplied username along side master password`,
+		Run: comm.RunCommand(Login),
+	}
+
+	return loginCmd
+
 }

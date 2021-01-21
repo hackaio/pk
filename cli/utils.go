@@ -24,13 +24,13 @@ func logJSON(iList ...interface{}) {
 	for _, i := range iList {
 		m, err := json.Marshal(i)
 		if err != nil {
-			logError(err)
+			//logError(err)
 			return
 		}
 
 		pj, err := prettyjson.Format(m)
 		if err != nil {
-			logError(err)
+			//logError(err)
 			return
 		}
 
@@ -42,12 +42,16 @@ func logUsage(u string) {
 	fmt.Printf(color.YellowString("\nusage: %s\n\n"), u)
 }
 
-func logError(err error) {
+func logMessage(key, msg string) {
+	fmt.Printf(color.YellowString("\n%s: %s\n\n"),key, msg)
+}
+
+/*func logError(err error) {
 	boldRed := color.New(color.FgRed, color.Bold)
 	boldRed.Print("\nerror: ")
 
 	fmt.Printf("%s\n\n", color.RedString(err.Error()))
-}
+}*/
 
 func logOK() {
 	fmt.Printf("\n%s\n\n", color.BlueString("ok"))

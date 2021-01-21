@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
+	"github.com/hackaio/pk/sql/stmt"
 	_ "github.com/lib/pq"
 )
 
@@ -95,7 +96,7 @@ CREATE TABLE IF NOT EXISTS accounts(
 
 	if err != nil {
 		errMsg := errors.New("could not create tables")
-		return nil, errors.Wrap(err,errMsg)
+		return nil, errors.Wrap(err, errMsg)
 	}
 
 	return db, nil
@@ -112,11 +113,17 @@ func NewStore(db *sql.DB) pk.PasswordStore {
 }
 
 func (p pgStore) AddOwner(ctx context.Context, account pk.Account) (err error) {
-	panic("implement me")
+	_, err = p.db.Exec(stmt.ADD_OWNER,account.Name, account.UserName,
+		account.Email, account.Password, account.Created)
+	return err
 }
 
 func (p pgStore) GetOwner(ctx context.Context, name, username string) (account pk.Account, err error) {
-	panic("implement me")
+
+	err = p.db.QueryRow(stmt.GET_OWNER, name,username).Scan(&account.Name, &account.UserName,
+		&account.Email, &account.Password, &account.Created)
+
+	return account, err
 }
 
 func (p pgStore) CheckAccount(ctx context.Context, name, username string) (err error) {

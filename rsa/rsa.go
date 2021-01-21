@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package main
+package rsa
 
 import (
 	"bufio"
@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
-	"github.com/mitchellh/go-homedir"
 	"os"
 	"path/filepath"
 )
@@ -298,84 +297,84 @@ func initCredentials(homeDir string) (err error) {
 	return err
 }
 
-func main() {
-
-	// Find home directory.
-	home, err := homedir.Dir()
-	if err != nil {
-		fmt.Printf("can not find home: %v\n", err)
-		os.Exit(1)
-	}
-
-	appHomePath := filepath.Join(home, pk.AppDir)
-	appCredsPath := filepath.Join(appHomePath, pk.CredDir)
-	appDBPath := filepath.Join(appHomePath, pk.DBDir)
-	err = os.MkdirAll(appCredsPath, 0777)
-	err = os.MkdirAll(appDBPath, 0777)
-	if err != nil {
-		fmt.Printf("can not create dir: %v\n", err)
-		os.Exit(1)
-	}
-
-	es, err := NewEncoderSigner(home)
-
-	if err != nil {
-		fmt.Printf("could not create encoder signer due to %v\n", err)
-		panic(err)
-	}
-	/*
-
-
-		// The GenerateKey method takes in a reader that returns random bits, and
-		// the number of bits
-		privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-		if err != nil {
-			panic(err)
-		}
-
-		// The public key is a part of the *rsa.PrivateKey struct
-		publicKey := privateKey.PublicKey
-
-		savePEMKey("private.pem",privateKey)
-		savePublicPEMKey("public.pem",publicKey)
-
-
-		privkey, err := privateKeyFromPEM("private.pem")
-		pubkey, err := pubKeyFromPEM("public.pem")
-
-		checkError(err)
-
-		es := rsaEncoderSigner{
-			PublicKey:  pubkey,
-			PrivateKey: privkey,
-		}
-	*/
-	bt, err := es.Encode("mypasswordphrase")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("%v\n", bt)
-
-	btStr, err := es.Decode(bt)
-
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("%v\n", btStr)
-
-	msg := "message"
-
-	digest, signature, err := es.Sign(msg)
-
-	err = es.Verify("message", digest, signature)
-
-	if err != nil {
-		panic(err)
-		os.Exit(1)
-	}
-	// If we don't get any error from the `VerifyPSS` method, that means our
-	// signature is valid
-	fmt.Println("signature verified")
-}
+//func main() {
+//
+//	// Find home directory.
+//	home, err := homedir.Dir()
+//	if err != nil {
+//		fmt.Printf("can not find home: %v\n", err)
+//		os.Exit(1)
+//	}
+//
+//	appHomePath := filepath.Join(home, pk.AppDir)
+//	appCredsPath := filepath.Join(appHomePath, pk.CredDir)
+//	appDBPath := filepath.Join(appHomePath, pk.DBDir)
+//	err = os.MkdirAll(appCredsPath, 0777)
+//	err = os.MkdirAll(appDBPath, 0777)
+//	if err != nil {
+//		fmt.Printf("can not create dir: %v\n", err)
+//		os.Exit(1)
+//	}
+//
+//	es, err := NewEncoderSigner(home)
+//
+//	if err != nil {
+//		fmt.Printf("could not create encoder signer due to %v\n", err)
+//		panic(err)
+//	}
+//	/*
+//
+//
+//		// The GenerateKey method takes in a reader that returns random bits, and
+//		// the number of bits
+//		privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+//		if err != nil {
+//			panic(err)
+//		}
+//
+//		// The public key is a part of the *rsa.PrivateKey struct
+//		publicKey := privateKey.PublicKey
+//
+//		savePEMKey("private.pem",privateKey)
+//		savePublicPEMKey("public.pem",publicKey)
+//
+//
+//		privkey, err := privateKeyFromPEM("private.pem")
+//		pubkey, err := pubKeyFromPEM("public.pem")
+//
+//		checkError(err)
+//
+//		es := rsaEncoderSigner{
+//			PublicKey:  pubkey,
+//			PrivateKey: privkey,
+//		}
+//	*/
+//	bt, err := es.Encode("mypasswordphrase")
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	fmt.Printf("%v\n", bt)
+//
+//	btStr, err := es.Decode(bt)
+//
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	fmt.Printf("%v\n", btStr)
+//
+//	msg := "message"
+//
+//	digest, signature, err := es.Sign(msg)
+//
+//	err = es.Verify("message", digest, signature)
+//
+//	if err != nil {
+//		panic(err)
+//		os.Exit(1)
+//	}
+//	// If we don't get any error from the `VerifyPSS` method, that means our
+//	// signature is valid
+//	fmt.Println("signature verified")
+//}

@@ -14,9 +14,14 @@ package cli
 
 import (
 	"fmt"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/pg"
+	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
 	"os"
 
+	jwt "github.com/hackaio/pk/jwt"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
@@ -24,6 +29,7 @@ import (
 var cfgFile string
 var verboseResp bool
 var tokenStr string
+var home string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -52,7 +58,31 @@ func init() {
 	rootCmd.PersistentFlags().StringP("name","n","","name of the account (e.g github)")
 	rootCmd.PersistentFlags().StringP("username","u","","username of the account (e.g alicebob)")
 	rootCmd.PersistentFlags().StringP("email","e","","email of the account")
-	rootCmd.PersistentFlags().StringP("passphrase","p","","the account password")
+	rootCmd.PersistentFlags().StringP("password","p","","the account password")
+
+	pgDatabase,err := pg.Connect()
+	if err != nil {
+		panic(err)
+	}
+
+	store := pg.NewStore(pgDatabase)
+	hasher := bcrypt.New()
+	tokenizer := jwt.NewTokenizer("pk")
+	/*logger := log.New(os.Stdout,"pk",0)
+	logMiddleware := pk.LoggingMiddleware(logger)*/
+
+	homeDir, err := homedir.Dir()
+	es,err := rsa.NewEncoderSigner(homeDir)
+	if err != nil {
+		panic(err)
+	}
+
+
+	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es)
+	comm := commander{keeper: keeper}
+	initCmd := NewInitCommand(comm)
+	loginCmd := NewLoginCommand(comm)
+	rootCmd.AddCommand(initCmd,loginCmd)
 
 }
 

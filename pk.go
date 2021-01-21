@@ -209,11 +209,14 @@ func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (
 		return ErrResponse{Err: err.Error()}
 	}
 
+	email := request.Email
+	username := request.Username
+
 	created := time.Now().UTC().Format(time.RFC3339)
 	dbAccount := Account{
 		Name:     "master",
-		UserName: request.Username,
-		Email:    request.Email,
+		UserName: username,
+		Email:    email,
 		Password: password,
 		Created:  created,
 	}
