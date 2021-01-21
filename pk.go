@@ -15,6 +15,7 @@ package pk
 
 import (
 	"context"
+	"fmt"
 	"github.com/hackaio/pk/pkg/errors"
 	"time"
 )
@@ -241,8 +242,12 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 		}
 	}
 
-	err = p.hasher.Compare(account.Password, password)
+	fmt.Printf("owner: %v\n",account)
+
+	err = p.hasher.Compare(password,account.Password)
 	if err != nil {
+
+		fmt.Printf("password comparisons failed due to %v\n",err)
 		return LoginResponse{
 			Token: "",
 			Err:   err,
@@ -253,11 +258,14 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 
 	tokenStr, err := p.tokenizer.Issue(token)
 	if err != nil {
+		fmt.Printf("could not issue token due to %v\n",err)
 		return LoginResponse{
 			Token: "",
 			Err:   err,
 		}
 	}
+
+	fmt.Printf("token: %v\n",tokenStr)
 
 	return LoginResponse{
 		Token: tokenStr,
