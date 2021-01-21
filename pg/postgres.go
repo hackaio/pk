@@ -135,10 +135,10 @@ func (p pgStore) Add(ctx context.Context, account pk.DBAccount) (err error) {
 	username := account.UserName
 	email := account.Email
 	hash := account.Hash
-	encoded := account.Name
-	digest := account.UserName
-	sgn := account.Email
-	created := account.Hash
+	encoded := account.Encoded
+	digest := account.Digest
+	sgn := account.Signature
+	created := account.Created
 	_, err = p.db.Exec(stmt.ADD, name, username, email, hash, encoded, digest, sgn, created)
 
 	return err
