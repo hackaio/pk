@@ -82,7 +82,9 @@ func init() {
 	comm := commander{keeper: keeper}
 	initCmd := NewInitCommand(comm)
 	loginCmd := NewLoginCommand(comm)
-	rootCmd.AddCommand(initCmd,loginCmd)
+	addCmd := NewAddCmd(comm)
+	getCmd := NewGetCommand(comm)
+	rootCmd.AddCommand(initCmd,loginCmd,addCmd,getCmd)
 
 }
 
