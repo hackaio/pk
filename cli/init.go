@@ -65,7 +65,7 @@ func (comm *commander) RunCommand(command Command) func(cmd *cobra.Command, args
 			}
 			errResponse := comm.keeper.Register(context.Background(), request)
 
-			if errResponse.Err != "" {
+			if errResponse.Err != nil {
 				//logError(errors.New(errResponse.Err))
 			}
 

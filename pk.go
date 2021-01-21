@@ -15,7 +15,6 @@ package pk
 
 import (
 	"context"
-	"fmt"
 	"github.com/hackaio/pk/pkg/errors"
 	"time"
 )
@@ -73,10 +72,10 @@ type DBAccount struct {
 	Name      string `json:"name,omitempty"`
 	UserName  string `json:"username,omitempty"`
 	Email     string `json:"email,omitempty"`
-	Hash      []byte `json:"hash,omitempty"`
-	Encoded   []byte `json:"encoded,omitempty"`
-	Digest    []byte `json:"digest,omitempty"`
-	Signature []byte `json:"signature,omitempty"`
+	Hash      string `json:"hash,omitempty"`
+	Encoded   string `json:"encoded,omitempty"`
+	Digest    string `json:"digest,omitempty"`
+	Signature string `json:"signature,omitempty"`
 	Created   string `json:"created,omitempty"`
 }
 
@@ -113,6 +112,7 @@ type GetRequest struct {
 type GetResponse struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Err error `json:"err"`
 }
 
 type ListResponse struct {
@@ -132,7 +132,56 @@ type UpdateRequest struct {
 //ErrResponse is a generic error response for function
 //returning error as the only return value
 type ErrResponse struct {
-	Err string `json:"err"`
+	Err error `json:"err"`
+	Msg string `json:"msg"`
+}
+
+func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount,error) {
+
+	hash,err := keeper.hasher.Hash(a.Password)
+
+	if err != nil {
+		return DBAccount{}, err
+	}
+
+	encodedBytes,err := keeper.es.Encode(a.Password)
+
+	if err != nil {
+		return DBAccount{}, err
+	}
+
+	digestB, signB, err := keeper.es.Sign(a.Password)
+
+	if err != nil {
+		return DBAccount{}, err
+	}
+
+	return DBAccount{
+		Name:      a.Name,
+		UserName:  a.UserName,
+		Email:     a.Email,
+		Hash:      hash,
+		Encoded:   string(encodedBytes),
+		Digest:    string(digestB),
+		Signature: string(signB),
+		Created:   a.Created,
+	},nil
+}
+
+func (a DBAccount) toAccount(keeper passwordKeeper) (Account,error) {
+
+	pass,err:= keeper.es.Decode([]byte(a.Encoded))
+
+	if err != nil {
+		return Account{}, err
+	}
+	return Account{
+		Name:     a.Name,
+		UserName: a.UserName,
+		Email:    a.Email,
+		Password: pass,
+		Created:  a.Created,
+	},nil
 }
 
 type PasswordKeeper interface {
@@ -207,7 +256,11 @@ func NewPasswordKeeper(
 func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
 	password, err := p.hasher.Hash(request.Password)
 	if err != nil {
-		return ErrResponse{Err: err.Error()}
+		msg := "could not hash the password"
+		return ErrResponse{
+			Err: err,
+			Msg: msg,
+		}
 	}
 
 	email := request.Email
@@ -225,10 +278,14 @@ func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (
 	err = p.passwords.AddOwner(ctx, dbAccount)
 
 	if err != nil {
-		return ErrResponse{Err: err.Error()}
+		msg := "could not add new user"
+		return ErrResponse{
+			Err: err,
+			Msg: msg,
+		}
 	}
 
-	return ErrResponse{}
+	return ErrResponse{Err: nil}
 }
 
 func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
@@ -242,12 +299,9 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 		}
 	}
 
-	fmt.Printf("owner: %v\n",account)
-
 	err = p.hasher.Compare(password,account.Password)
 	if err != nil {
 
-		fmt.Printf("password comparisons failed due to %v\n",err)
 		return LoginResponse{
 			Token: "",
 			Err:   err,
@@ -258,14 +312,12 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 
 	tokenStr, err := p.tokenizer.Issue(token)
 	if err != nil {
-		fmt.Printf("could not issue token due to %v\n",err)
+
 		return LoginResponse{
 			Token: "",
 			Err:   err,
 		}
 	}
-
-	fmt.Printf("token: %v\n",tokenStr)
 
 	return LoginResponse{
 		Token: tokenStr,
@@ -274,12 +326,93 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 }
 
 func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrResponse) {
-	//token := request.Token
-	return ErrResponse{}
+	tokenStr := request.Token
+
+	//fixme: check the id in token and compare it to master
+	_, err1 := p.tokenizer.Parse(tokenStr)
+	if err1 != nil {
+		msg := "invalid token"
+		return ErrResponse{
+			Err: err1,
+			Msg: msg,
+		}
+	}
+
+	name := request.Name
+	username:= request.UserName
+	password := request.Password
+	email := request.Email
+
+	account := Account{
+		Name:     name,
+		UserName: username,
+		Email:    email,
+		Password: password,
+		Created:  time.Now().Format(time.RFC3339),
+	}
+
+	dbAccount,err2 := account.toDBAccount(p)
+
+	if err2 != nil {
+		msg := "could not encrypt account details"
+		return ErrResponse{
+			Err: err2,
+			Msg: msg,
+		}
+	}
+
+	err3 := p.passwords.Add(ctx,dbAccount)
+
+	if err3 != nil {
+		msg := "could not store the account details"
+		return ErrResponse{
+			Err: err3,
+			Msg: msg,
+		}
+	}
+
+
+	return ErrResponse{Err: nil}
 }
 
 func (p passwordKeeper) Get(ctx context.Context, request GetRequest) (response GetResponse) {
-	panic("implement me")
+
+	tokenStr := request.Token
+	_,err :=p.tokenizer.Parse(tokenStr)
+
+	if err != nil {
+		return GetResponse{
+			Email:    "",
+			Password: "",
+			Err: err,
+		}
+	}
+	username := request.UserName
+	name := request.Name
+	account,err := p.passwords.Get(ctx,name,username)
+	if err != nil {
+		return GetResponse{
+			Email:    "",
+			Password: "",
+			Err:      err,
+		}
+	}
+
+	acc, err := account.toAccount(p)
+
+	if err != nil {
+		return GetResponse{
+			Email:    "",
+			Password: "",
+			Err:      err,
+		}
+	}
+
+	return GetResponse{
+		Email:   acc.Email,
+		Password: acc.Password,
+		Err:      nil,
+	}
 }
 
 func (p passwordKeeper) Delete(ctx context.Context, request GetRequest) (err ErrResponse) {
