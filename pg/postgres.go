@@ -131,11 +131,26 @@ func (p pgStore) CheckAccount(ctx context.Context, name, username string) (err e
 }
 
 func (p pgStore) Add(ctx context.Context, account pk.DBAccount) (err error) {
-	panic("implement me")
+	name := account.Name
+	username := account.UserName
+	email := account.Email
+	hash := account.Hash
+	encoded := account.Name
+	digest := account.UserName
+	sgn := account.Email
+	created := account.Hash
+	_, err = p.db.Exec(stmt.ADD, name, username, email, hash, encoded, digest, sgn, created)
+
+	return err
 }
 
 func (p pgStore) Get(ctx context.Context, name, username string) (account pk.DBAccount, err error) {
-	panic("implement me")
+	err = p.db.QueryRow(stmt.GET, name,username).
+		Scan(&account.Name, &account.UserName, &account.Email,
+			&account.Hash,&account.Encoded, &account.Digest,
+			&account.Signature, &account.Created)
+
+	return account, err
 }
 
 func (p pgStore) Delete(ctx context.Context, name, username string) (err error) {
