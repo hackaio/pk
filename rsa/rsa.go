@@ -38,19 +38,17 @@ type rsaEncoderSigner struct {
 var _ pk.Encoder = (*rsaEncoderSigner)(nil)
 var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
+
 func NewEncoderSigner(homeDir string) (es pk.EncoderSigner, err error) {
 
 	credsDir := filepath.Join(homeDir, pk.AppDir, pk.CredDir)
 	privateKeyPEMFile := filepath.Join(credsDir, "private.pem")
 	publicKeyPEMFile := filepath.Join(credsDir, "public.pem")
 
-	fmt.Printf("scanning creds at %v and %v ..... \n", privateKeyPEMFile, publicKeyPEMFile)
-
 	_, errNoPrivatePEMFile := os.Stat(privateKeyPEMFile)
 	_, errNoPubKeyPEMFile := os.Stat(publicKeyPEMFile)
 
 	if errNoPrivatePEMFile == nil && errNoPubKeyPEMFile == nil {
-		fmt.Printf("creds files exists... load em up\n")
 		pubKey, privateKey, err := loadCredentials(credsDir)
 		es = rsaEncoderSigner{
 			PublicKey:  pubKey,
@@ -62,7 +60,7 @@ func NewEncoderSigner(homeDir string) (es pk.EncoderSigner, err error) {
 		}
 
 	} else if os.IsNotExist(errNoPubKeyPEMFile) || os.IsNotExist(errNoPrivatePEMFile) {
-		fmt.Printf("creds files do not exists... time to craft\n")
+
 		err = initCredentials(homeDir)
 	}
 

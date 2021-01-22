@@ -73,9 +73,9 @@ type DBAccount struct {
 	UserName  string `json:"username,omitempty"`
 	Email     string `json:"email,omitempty"`
 	Hash      string `json:"hash,omitempty"`
-	Encoded   string `json:"encoded,omitempty"`
-	Digest    string `json:"digest,omitempty"`
-	Signature string `json:"signature,omitempty"`
+	Encoded   []byte `json:"encoded,omitempty"`
+	Digest    []byte `json:"digest,omitempty"`
+	Signature []byte `json:"signature,omitempty"`
 	Created   string `json:"created,omitempty"`
 }
 
@@ -161,16 +161,16 @@ func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount,error) {
 		UserName:  a.UserName,
 		Email:     a.Email,
 		Hash:      hash,
-		Encoded:   string(encodedBytes),
-		Digest:    string(digestB),
-		Signature: string(signB),
+		Encoded:   encodedBytes,
+		Digest:    digestB,
+		Signature: signB,
 		Created:   a.Created,
 	},nil
 }
 
 func (a DBAccount) toAccount(keeper passwordKeeper) (Account,error) {
 
-	pass,err:= keeper.es.Decode([]byte(a.Encoded))
+	pass,err:= keeper.es.Decode(a.Encoded)
 
 	if err != nil {
 		return Account{}, err

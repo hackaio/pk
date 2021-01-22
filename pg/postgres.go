@@ -69,7 +69,7 @@ func Connect() (*sql.DB, error) {
 	createMasterDb := `
 CREATE TABLE IF NOT EXISTS masters(
     name VARCHAR (200) NOT NULL,
-    username VARCHAR (200) NOT NULL,
+    username VARCHAR (200) NOT NULL UNIQUE ,
     email VARCHAR(200) NOT NULL,
     password VARCHAR(200) NOT NULL,
     created VARCHAR(100) NOT NULL,
@@ -82,10 +82,10 @@ CREATE TABLE IF NOT EXISTS accounts(
     name VARCHAR (200) NOT NULL,
     username VARCHAR (200) NOT NULL,
     email VARCHAR(200) NOT NULL,
-    hash VARCHAR (300) NOT NULL UNIQUE,
-    encoded VARCHAR (300) NOT NULL UNIQUE,
-    digest VARCHAR (300) NOT NULL UNIQUE,
-    signature VARCHAR (300) NOT NULL UNIQUE,
+    hash VARCHAR(300) NOT NULL UNIQUE,
+    encoded BYTEA NOT NULL UNIQUE,
+    digest BYTEA NOT NULL UNIQUE,
+    signature BYTEA NOT NULL UNIQUE,
     created VARCHAR(100) NOT NULL,
     PRIMARY KEY (name,username)
 )
