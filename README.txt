@@ -1,6 +1,8 @@
 pk
 =========
 
+pk stands for Password Keeper
+
 Usage:
   pk [command]
 
