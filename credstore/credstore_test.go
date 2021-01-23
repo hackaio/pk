@@ -22,6 +22,10 @@ func TestSetGet(t *testing.T) {
 	url := "https://github.com/hackaio/pk"
 	credStore := New()
 	err := credStore.Set("pk-password-manager", url, "user", "password")
+
+	if err != nil {
+		panic(err)
+	}
 	user, secret, err := credStore.Get("pk-password-manager", url)
 	if err == nil {
 		if user != "user" {
