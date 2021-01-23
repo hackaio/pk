@@ -11,13 +11,8 @@
  * limitations under the License.
  */
 
-package pk
+package credstore
 
+import "github.com/docker/docker-credential-helpers/wincred"
 
-//CredStore provides API to manage credentials securely
-//per OS specific mechanism
-type CredStore interface {
-	Set(lbl, url, user, secret string)error
-	Get(lbl, url string)(string,string,error)
-	Del(lbl, url string)error
-}
+var ns = wincred.Wincred{}

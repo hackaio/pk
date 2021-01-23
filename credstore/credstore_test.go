@@ -11,13 +11,28 @@
  * limitations under the License.
  */
 
-package pk
+package credstore
 
+import (
+	"log"
+	"testing"
+)
 
-//CredStore provides API to manage credentials securely
-//per OS specific mechanism
-type CredStore interface {
-	Set(lbl, url, user, secret string)error
-	Get(lbl, url string)(string,string,error)
-	Del(lbl, url string)error
+func TestSetGet(t *testing.T) {
+	url := "https://github.com/hackaio/pk"
+	credStore := New()
+	err := credStore.Set("pk-password-manager", url, "user", "password")
+	user, secret, err := credStore.Get("pk-password-manager", url)
+	if err == nil {
+		if user != "user" {
+			t.Errorf("Expecting user, got %s", user)
+		}
+
+		if secret != "password" {
+			t.Errorf("Expecting password, got %s", secret)
+		}
+	} else {
+		log.Println("got error:", err)
+	}
 }
+
