@@ -11,5 +11,6 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/viper v1.7.1
+	github.com/zalando/go-keyring v0.1.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )

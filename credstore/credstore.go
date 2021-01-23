@@ -13,12 +13,11 @@
 
 package credstore
 
-import (
-	creds "github.com/docker/docker-credential-helpers/credentials"
-	"github.com/hackaio/pk"
-)
+import "github.com/hackaio/pk"
+import "github.com/zalando/go-keyring"
 
 type cred struct {}
+
 
 var _ pk.CredStore = (*cred)(nil)
 
@@ -26,27 +25,20 @@ func New() pk.CredStore {
 	return &cred{}
 }
 
-func (c *cred) Set(lbl, url, user, secret string) error {
-	cr := &creds.Credentials{
-		ServerURL: url,
-		Username:  user,
-		Secret:    secret,
-	}
-
-
-	creds.SetCredsLabel(lbl)
-	return ns.Add(cr)
+func (c *cred) Set(service, user, password string) error {
+	return keyring.Set(service, user, password)
 }
 
-func (c *cred) Get(lbl, url string) (string,string, error) {
-	creds.SetCredsLabel(lbl)
-	return ns.Get(url)
+func (c cred) Get(service, user string) (string, error) {
+	return keyring.Get(service,user)
 }
 
-func (c *cred) Del(lbl, url string) error {
-	creds.SetCredsLabel(lbl)
-	return ns.Delete(url)
+func (c cred) Delete(service, user string) error {
+	return keyring.Delete(service,user)
 }
+
+
+
 
 
 
