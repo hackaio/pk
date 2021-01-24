@@ -19,6 +19,7 @@ import (
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
 )
@@ -74,7 +75,6 @@ func MakeAllCommands(comm commander) Commands {
 	}
 }
 
-
 func (comm *commander) runInitCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
@@ -85,7 +85,7 @@ func (comm *commander) runInitCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		if username == "" || email == ""{
+		if username == "" || email == "" {
 			err1 := errors.New("username and email not specified")
 			logUsage(cmd.Example)
 			logError(err1)
@@ -107,13 +107,13 @@ func (comm *commander) runInitCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		if !bytes.Equal(password,password1){
+		if !bytes.Equal(password, password1) {
 			err1 := errors.New("password mismatch")
 			logError(err1)
 			os.Exit(1)
 		}
 
-		if string(password) == "" || len(string(password)) < minPasswordLen{
+		if string(password) == "" || len(string(password)) < minPasswordLen {
 			err1 := errors.New("password length should be >= 6 chars")
 			logError(err1)
 			os.Exit(1)
@@ -121,10 +121,10 @@ func (comm *commander) runInitCommand() CommandFunc {
 
 		cs := comm.keeper.CredStore()
 
-		err = cs.Set(pk.AppName,username,string(password))
+		err = cs.Set(pk.AppName, username, string(password))
 
 		if err != nil {
-			err1 := errors.New(fmt.Sprintf("could not save token due to: %v",err))
+			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
 			logError(err1)
 			os.Exit(1)
 		}
@@ -149,18 +149,58 @@ func (comm *commander) runLoginCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 
-		if err != nil || username == ""{
+		if err != nil || username == "" {
 			logError(err)
 			os.Exit(1)
 		}
 
 		cs := comm.keeper.CredStore()
 
-		password, err := cs.Get(pk.AppName,username)
+		var password string
 
-		if err != nil || password == ""{
-			logError(err)
-			os.Exit(1)
+		password, err = cs.Get(pk.AppName, username)
+
+		if err != nil || password == "" {
+
+			if err == keyring.ErrNotFound {
+				fmt.Println("Enter password: ")
+				passwordBytes, err := terminal.ReadPassword(0)
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+				fmt.Println("Enter password again: ")
+
+				passwordBytes1, err := terminal.ReadPassword(0)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				if !bytes.Equal(passwordBytes, passwordBytes1) {
+					err1 := errors.New("password mismatch")
+					logError(err1)
+					os.Exit(1)
+				}
+
+				if string(passwordBytes) == "" || len(string(passwordBytes)) < minPasswordLen {
+					err1 := errors.New("password length should be >= 6 chars")
+					logError(err1)
+					os.Exit(1)
+				}
+
+				password = string(passwordBytes)
+
+
+				//fixme
+				_ = cs.Set(pk.AppName, username, password)
+
+				return
+			} else {
+				logError(err)
+				os.Exit(1)
+			}
 		}
 
 		request := pk.LoginRequest{
@@ -172,10 +212,10 @@ func (comm *commander) runLoginCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		err = cs.Set(pk.AppName,"token",response.Token)
+		err = cs.Set(pk.AppName, "token", response.Token)
 
-		if err != nil{
-			err1 := errors.New(fmt.Sprintf("could not save token due to: %v",err))
+		if err != nil {
+			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
 			logError(err1)
 			os.Exit(1)
 		}
@@ -194,7 +234,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cs.Get(pk.AppName,"token")
+		token, err := cs.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -234,7 +274,7 @@ func (comm *commander) runGetCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cs.Get(pk.AppName,"token")
+		token, err := cs.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -266,25 +306,25 @@ func (comm *commander) runGetCommand() CommandFunc {
 
 func (comm *commander) runDeleteCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
-		logMessage("error",debugMessage)
+		logMessage("error", debugMessage)
 	}
 }
 
 func (comm *commander) runListCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
-		logMessage("error",debugMessage)
+		logMessage("error", debugMessage)
 	}
 }
 
 func (comm *commander) runUpdateCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
-		logMessage("error",debugMessage)
+		logMessage("error", debugMessage)
 	}
 }
 
 func (comm *commander) runDBCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
-		logMessage("error",debugMessage)
+		logMessage("error", debugMessage)
 	}
 }
 
@@ -322,7 +362,6 @@ func (comm *commander) RunCommand(command Command) CommandFunc {
 		}
 	}
 }
-
 
 func makeInitCommand(comm commander) *cobra.Command {
 	var initCmd = &cobra.Command{
