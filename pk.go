@@ -238,18 +238,20 @@ type passwordKeeper struct {
 	passwords PasswordStore
 	tokenizer Tokenizer
 	es        EncoderSigner
+	credentials CredStore
 }
 
 var _ PasswordKeeper = (*passwordKeeper)(nil)
 
 func NewPasswordKeeper(
 	hasher Hasher, store PasswordStore,
-	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
+	tokenizer Tokenizer, es EncoderSigner, cs CredStore) PasswordKeeper {
 	return &passwordKeeper{
 		hasher:    hasher,
 		passwords: store,
 		tokenizer: tokenizer,
 		es:        es,
+		credentials: cs,
 	}
 }
 

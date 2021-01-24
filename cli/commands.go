@@ -19,6 +19,10 @@ import (
 	"os"
 )
 
+var (
+	debugMessage = "not yet implemented"
+)
+
 type Command int
 
 const (
@@ -29,145 +33,226 @@ const (
 	Delete
 	List
 	Update
+	DB
 )
 
-
-
+type CommandFunc func(cmd *cobra.Command, args []string)
 
 type commander struct {
 	keeper pk.PasswordKeeper
 }
 
-func (comm *commander) RunCommand(command Command) func(cmd *cobra.Command, args []string) {
+type Commands struct {
+	Init   *cobra.Command
+	Login  *cobra.Command
+	Add    *cobra.Command
+	Get    *cobra.Command
+	Delete *cobra.Command
+	Update *cobra.Command
+	DB     *cobra.Command
+	List   *cobra.Command
+}
+
+func MakeAllCommands(comm commander) Commands {
+	return Commands{
+		Init:   makeInitCommand(comm),
+		Login:  makeLoginCommand(comm),
+		Add:    makeAddCommand(comm),
+		Get:    makeGetCommand(comm),
+		Delete: makeDeleteCommand(comm),
+		Update: makeUpdateCommand(comm),
+		DB:     makeDBCommand(comm),
+		List:   makeListCommand(comm),
+	}
+}
+
+
+func (comm *commander) runInitCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		username, err := cmd.Flags().GetString("username")
+		email, err := cmd.Flags().GetString("email")
+		password, err := cmd.Flags().GetString("password")
+
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		if username == "" || email == "" || password == "" {
+			logUsage(cmd.Example)
+			os.Exit(1)
+		}
+		request := pk.RegisterRequest{
+			Username: username,
+			Email:    email,
+			Password: password,
+		}
+		errResponse := comm.keeper.Register(context.Background(), request)
+
+		if errResponse.Err != nil {
+			logError(errResponse.Err)
+			return
+		}
+
+		logOK()
+		return
+	}
+}
+
+func (comm *commander) runLoginCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		username, err := cmd.Flags().GetString("username")
+		password, err := cmd.Flags().GetString("password")
+
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		if username == "" || password == "" {
+			logUsage(cmd.Example)
+			os.Exit(1)
+		}
+		request := pk.LoginRequest{
+			UserName: username,
+			Password: password,
+		}
+		response := comm.keeper.Login(context.Background(), request)
+		if response.Err != nil {
+			os.Exit(1)
+		}
+
+		logMessage("token", response.Token)
+		return
+	}
+
+}
+
+func (comm *commander) runAddCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		username, err := cmd.Flags().GetString("username")
+		email, err := cmd.Flags().GetString("email")
+		password, err := cmd.Flags().GetString("password")
+		name, err := cmd.Flags().GetString("name")
+		token, err := cmd.Flags().GetString("token")
+
+		if err != nil {
+			logError(err)
+			return
+		}
+
+		if username == "" || email == "" || password == "" ||
+			name == "" || token == "" {
+			logUsage(cmd.Example)
+			os.Exit(1)
+		}
+
+		request := pk.AddRequest{
+			Token:    token,
+			Name:     name,
+			UserName: username,
+			Email:    email,
+			Password: password,
+		}
+
+		res := comm.keeper.Add(context.Background(), request)
+
+		if res.Err != nil {
+			logError(res.Err)
+			return
+		}
+
+		logOK()
+		return
+	}
+
+}
+
+func (comm *commander) runGetCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		username, err := cmd.Flags().GetString("username")
+		name, err := cmd.Flags().GetString("name")
+		token, err := cmd.Flags().GetString("token")
+
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		if username == "" || name == "" || token == "" {
+			logUsage(cmd.Example)
+			os.Exit(1)
+		}
+		request := pk.GetRequest{
+			Token:    token,
+			Name:     name,
+			UserName: username,
+		}
+
+		response := comm.keeper.Get(context.Background(), request)
+
+		if response.Err != nil {
+			logError(response.Err)
+		}
+
+		logMessage("username", response.Email)
+		logMessage("password", response.Password)
+
+	}
+
+}
+
+func (comm *commander) runDeleteCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		logMessage("error",debugMessage)
+	}
+}
+
+func (comm *commander) runListCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		logMessage("error",debugMessage)
+	}
+}
+
+func (comm *commander) runUpdateCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		logMessage("error",debugMessage)
+	}
+}
+
+func (comm *commander) runDBCommand() CommandFunc {
+	return func(cmd *cobra.Command, args []string) {
+		logMessage("error",debugMessage)
+	}
+}
+
+func (comm *commander) RunCommand(command Command) CommandFunc {
+
 	switch command {
 
 	case Init:
-		return func(cmd *cobra.Command, args []string) {
-			username,err := cmd.Flags().GetString("username")
-			email,err := cmd.Flags().GetString("email")
-			password,err := cmd.Flags().GetString("password")
-
-			if err != nil{
-				logError(err)
-				os.Exit(1)
-			}
-
-			if username == "" || email == "" || password == ""{
-				logUsage(cmd.Example)
-				os.Exit(1)
-			}
-			request := pk.RegisterRequest{
-				Username: username,
-				Email:    email,
-				Password: password,
-			}
-			errResponse := comm.keeper.Register(context.Background(), request)
-
-			if errResponse.Err != nil {
-				logError(errResponse.Err)
-				return
-			}
-
-			logOK()
-			return
-		}
+		return comm.runInitCommand()
 
 	case Login:
-		return func(cmd *cobra.Command, args []string) {
-			username,err := cmd.Flags().GetString("username")
-			password,err := cmd.Flags().GetString("password")
-
-			if err != nil{
-				logError(err)
-				os.Exit(1)
-			}
-
-			if username == "" || password == ""{
-				logUsage(cmd.Example)
-				os.Exit(1)
-			}
-			request := pk.LoginRequest{
-				UserName: username,
-				Password: password,
-			}
-			response := comm.keeper.Login(context.Background(),request)
-			if response.Err != nil {
-				os.Exit(1)
-			}
-
-			logMessage("token",response.Token)
-			return
-		}
+		return comm.runLoginCommand()
 
 	case Add:
-		return func(cmd *cobra.Command, args []string) {
-			username,err := cmd.Flags().GetString("username")
-			email,err := cmd.Flags().GetString("email")
-			password,err := cmd.Flags().GetString("password")
-			name,err := cmd.Flags().GetString("name")
-			token,err := cmd.Flags().GetString("token")
-
-			if err != nil {
-				logError(err)
-				return
-			}
-
-			if username == "" || email == "" || password == ""||
-				name == "" || token == ""{
-				logUsage(cmd.Example)
-				os.Exit(1)
-			}
-
-			request := pk.AddRequest{
-				Token:    token,
-				Name:     name,
-				UserName: username,
-				Email:    email,
-				Password: password,
-			}
-
-			res := comm.keeper.Add(context.Background(),request)
-
-			if res.Err != nil {
-				logError(res.Err)
-				return
-			}
-
-			logOK()
-			return
-		}
+		return comm.runAddCommand()
 
 	case Get:
-		return func(cmd *cobra.Command, args []string) {
-			username,err := cmd.Flags().GetString("username")
-			name,err := cmd.Flags().GetString("name")
-			token,err := cmd.Flags().GetString("token")
+		return comm.runGetCommand()
 
-			if err != nil{
-				logError(err)
-				os.Exit(1)
-			}
+	case Delete:
+		return comm.runDeleteCommand()
 
-			if username == "" || name == "" || token == ""{
-				logUsage(cmd.Example)
-				os.Exit(1)
-			}
-			request := pk.GetRequest{
-				Token:    token,
-				Name:     name,
-				UserName: username,
-			}
+	case List:
+		return comm.runListCommand()
 
-			response := comm.keeper.Get(context.Background(),request)
+	case Update:
+		return comm.runUpdateCommand()
 
-			if response.Err != nil {
-				logError(response.Err)
-			}
-
-			logMessage("username",response.Email)
-			logMessage("password",response.Password)
-
-		}
+	case DB:
+		return comm.runDBCommand()
 
 	default:
 		return func(cmd *cobra.Command, args []string) {
@@ -176,56 +261,110 @@ func (comm *commander) RunCommand(command Command) func(cmd *cobra.Command, args
 	}
 }
 
-func NewInitCommand(comm commander)*cobra.Command {
+
+func makeInitCommand(comm commander) *cobra.Command {
 	var initCmd = &cobra.Command{
-		Use:   "init",
-		Short: "initialize pk",
-		Long: `init should be run firstly before anything after installation`,
+		Use:     "init",
+		Short:   "set up pk",
+		Long:    `init should be run firstly before anything after installation`,
 		Example: "pk init --username <username> --email <email> --password <password>",
-		Run: comm.RunCommand(Init),
+		Run:     comm.RunCommand(Init),
 	}
-	
+
+	initCmd.Flags().BoolP("credstore", "c", false, "store credentials")
+
 	return initCmd
 }
 
-func NewLoginCommand(comm commander)*cobra.Command{
+func makeLoginCommand(comm commander) *cobra.Command {
 	// loginCmd represents the login command
 	var loginCmd = &cobra.Command{
-		Use:   "login",
-		Short: "generate auth token",
+		Use:     "login",
+		Short:   "generate auth token",
 		Example: "pk login -u <username> -p <password>",
-		Long: `generates a jwt token string after the user has supplied username along side master password`,
-		Run: comm.RunCommand(Login),
+		Long:    `generates a jwt token string after the user has supplied username along side master password`,
+		Run:     comm.RunCommand(Login),
 	}
 
 	return loginCmd
 
 }
 
-func NewAddCmd(comm commander) *cobra.Command {
+func makeAddCommand(comm commander) *cobra.Command {
 	// addCmd represents the add command
 	var addCmd = &cobra.Command{
-		Use:   "add",
-		Short: "add new details to db",
+		Use:     "add",
+		Short:   "add new details to db",
 		Example: "pk add <token> <name> <username> <email> <password>",
-		Long: `provide name,username,email and password to add new acc`,
-		Run: comm.RunCommand(Add),
+		Long:    `provide name,username,email and password to add new acc`,
+		Run:     comm.RunCommand(Add),
 	}
 
 	return addCmd
 
 }
 
-func NewGetCommand(comm commander)*cobra.Command {
+func makeGetCommand(comm commander) *cobra.Command {
 	// getCmd represents the get command
 	var getCmd = &cobra.Command{
-		Use:   "get",
-		Short: "get account details",
+		Use:     "get",
+		Short:   "get account",
 		Example: "pk get -n <name> -u <username>",
-		Long: `return the details of a single account with specified username`,
-		Run: comm.RunCommand(Get),
+		Long:    `return the details of a single account with specified username`,
+		Run:     comm.RunCommand(Get),
 	}
 
 	return getCmd
 }
 
+func makeListCommand(comm commander) *cobra.Command {
+	// listCmd represents the get command
+	var listCmd = &cobra.Command{
+		Use:     "list",
+		Short:   "retrieve all accounts",
+		Example: "pk list",
+		Long:    `list all accounts details`,
+		Run:     comm.RunCommand(List),
+	}
+
+	return listCmd
+}
+
+func makeDeleteCommand(comm commander) *cobra.Command {
+	// deleteCmd represents the get command
+	var deleteCmd = &cobra.Command{
+		Use:     "delete",
+		Short:   "delete account",
+		Example: "pk delete -n <name> -u <username>",
+		Long:    `delete account details by specifying username and name`,
+		Run:     comm.RunCommand(Delete),
+	}
+
+	return deleteCmd
+}
+
+func makeUpdateCommand(comm commander) *cobra.Command {
+	// updateCmd represents the get command
+	var updateCmd = &cobra.Command{
+		Use:     "update",
+		Short:   "update account",
+		Example: "pk update -n <name> -u <username>",
+		Long:    `update account details by specifying username and name`,
+		Run:     comm.RunCommand(Update),
+	}
+
+	return updateCmd
+}
+
+func makeDBCommand(comm commander) *cobra.Command {
+	// dbCmd represents the get command
+	var dbCmd = &cobra.Command{
+		Use:     "db",
+		Short:   "db management command",
+		Example: "pk db",
+		Long:    `manages pk database`,
+		Run:     comm.RunCommand(DB),
+	}
+
+	return dbCmd
+}

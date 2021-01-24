@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/credstore"
 	"github.com/hackaio/pk/pg"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
@@ -77,14 +78,24 @@ func init() {
 		panic(err)
 	}
 
+	cs := credstore.New()
 
-	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es)
+	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es,cs)
+
 	comm := commander{keeper: keeper}
-	initCmd := NewInitCommand(comm)
-	loginCmd := NewLoginCommand(comm)
-	addCmd := NewAddCmd(comm)
-	getCmd := NewGetCommand(comm)
-	rootCmd.AddCommand(initCmd,loginCmd,addCmd,getCmd)
+
+	commands := MakeAllCommands(comm)
+
+	rootCmd.AddCommand(
+		commands.Init,
+		commands.Update,
+		commands.Delete,
+		commands.Get,
+		commands.Login,
+		commands.List,
+		commands.DB,
+		commands.Add,
+		)
 
 }
 
