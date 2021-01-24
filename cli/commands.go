@@ -13,12 +13,18 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/crypto/ssh/terminal"
 	"os"
+)
+
+const (
+	minPasswordLen = 6
 )
 
 var (
@@ -73,22 +79,49 @@ func (comm *commander) runInitCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		email, err := cmd.Flags().GetString("email")
-		password, err := cmd.Flags().GetString("password")
-
 
 		if err != nil {
 			logError(err)
 			os.Exit(1)
 		}
 
-		if username == "" || email == "" || password == "" {
+		if username == "" || email == ""{
+			err1 := errors.New("username and email not specified")
 			logUsage(cmd.Example)
+			logError(err1)
+			os.Exit(1)
+		}
+
+		fmt.Println("Enter password: ")
+		password, err := terminal.ReadPassword(0)
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+		fmt.Println("Enter password again: ")
+
+		password1, err := terminal.ReadPassword(0)
+
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		if !bytes.Equal(password,password1){
+			err1 := errors.New("password mismatch")
+			logError(err1)
+			os.Exit(1)
+		}
+
+		if string(password) == "" || len(string(password)) < minPasswordLen{
+			err1 := errors.New("password length should be >= 6 chars")
+			logError(err1)
 			os.Exit(1)
 		}
 
 		cs := comm.keeper.CredStore()
 
-		err = cs.Set(pk.AppName,username,password)
+		err = cs.Set(pk.AppName,username,string(password))
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v",err))
@@ -98,7 +131,7 @@ func (comm *commander) runInitCommand() CommandFunc {
 		request := pk.RegisterRequest{
 			Username: username,
 			Email:    email,
-			Password: password,
+			Password: string(password),
 		}
 		errResponse := comm.keeper.Register(context.Background(), request)
 
@@ -296,7 +329,7 @@ func makeInitCommand(comm commander) *cobra.Command {
 		Use:     "init",
 		Short:   "set up pk",
 		Long:    `init should be run firstly before anything after installation`,
-		Example: "pk init --username <username> --email <email> --password <password>",
+		Example: "pk init -u <username> -e <email>",
 		Run:     comm.RunCommand(Init),
 	}
 
@@ -310,7 +343,7 @@ func makeLoginCommand(comm commander) *cobra.Command {
 	var loginCmd = &cobra.Command{
 		Use:     "login",
 		Short:   "generate auth token",
-		Example: "pk login -u <username> -p <password>",
+		Example: "pk login -u <username>",
 		Long:    `generates a jwt token string after the user has supplied username along side master password`,
 		Run:     comm.RunCommand(Login),
 	}

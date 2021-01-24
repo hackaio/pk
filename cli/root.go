@@ -59,7 +59,7 @@ func init() {
 	rootCmd.PersistentFlags().StringP("name","n","","name of the account (e.g github)")
 	rootCmd.PersistentFlags().StringP("username","u","","username of the account (e.g alicebob)")
 	rootCmd.PersistentFlags().StringP("email","e","","email of the account")
-	rootCmd.PersistentFlags().StringP("password","p","","the account password")
+	//rootCmd.PersistentFlags().StringP("password","p","","the account password")
 
 	pgDatabase,err := pg.Connect()
 	if err != nil {
