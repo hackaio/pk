@@ -14,7 +14,9 @@ package cli
 
 import (
 	"context"
+	"fmt"
 	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/pkg/errors"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -73,6 +75,7 @@ func (comm *commander) runInitCommand() CommandFunc {
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 
+
 		if err != nil {
 			logError(err)
 			os.Exit(1)
@@ -80,6 +83,16 @@ func (comm *commander) runInitCommand() CommandFunc {
 
 		if username == "" || email == "" || password == "" {
 			logUsage(cmd.Example)
+			os.Exit(1)
+		}
+
+		cs := comm.keeper.CredStore()
+
+		err = cs.Set(pk.AppName,username,password)
+
+		if err != nil {
+			err1 := errors.New(fmt.Sprintf("could not save token due to: %v",err))
+			logError(err1)
 			os.Exit(1)
 		}
 		request := pk.RegisterRequest{
@@ -102,23 +115,35 @@ func (comm *commander) runInitCommand() CommandFunc {
 func (comm *commander) runLoginCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
-		password, err := cmd.Flags().GetString("password")
 
-		if err != nil {
+		if err != nil || username == ""{
 			logError(err)
 			os.Exit(1)
 		}
 
-		if username == "" || password == "" {
-			logUsage(cmd.Example)
+		cs := comm.keeper.CredStore()
+
+		password, err := cs.Get(pk.AppName,username)
+
+		if err != nil || password == ""{
+			logError(err)
 			os.Exit(1)
 		}
+
 		request := pk.LoginRequest{
 			UserName: username,
 			Password: password,
 		}
 		response := comm.keeper.Login(context.Background(), request)
 		if response.Err != nil {
+			os.Exit(1)
+		}
+
+		err = cs.Set(pk.AppName,"token",response.Token)
+
+		if err != nil{
+			err1 := errors.New(fmt.Sprintf("could not save token due to: %v",err))
+			logError(err1)
 			os.Exit(1)
 		}
 
@@ -130,11 +155,13 @@ func (comm *commander) runLoginCommand() CommandFunc {
 
 func (comm *commander) runAddCommand() CommandFunc {
 	return func(cmd *cobra.Command, args []string) {
+
+		cs := comm.keeper.CredStore()
 		username, err := cmd.Flags().GetString("username")
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cmd.Flags().GetString("token")
+		token, err := cs.Get(pk.AppName,"token")
 
 		if err != nil {
 			logError(err)
@@ -169,10 +196,12 @@ func (comm *commander) runAddCommand() CommandFunc {
 }
 
 func (comm *commander) runGetCommand() CommandFunc {
+
+	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cmd.Flags().GetString("token")
+		token, err := cs.Get(pk.AppName,"token")
 
 		if err != nil {
 			logError(err)

@@ -24,6 +24,10 @@ type loggingMiddleware struct {
 	next   PasswordKeeper
 }
 
+func (l loggingMiddleware) CredStore() CredStore {
+	panic("implement me")
+}
+
 func LoggingMiddleware(logger *log.Logger) Middleware {
 	return func(keeper PasswordKeeper) PasswordKeeper {
 		return &loggingMiddleware{next: keeper}

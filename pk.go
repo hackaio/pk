@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	AppName = "pk"
 	AppDir  = "pk"
 	DBDir   = "db"
 	CredDir = "creds"
@@ -220,6 +221,8 @@ type PasswordKeeper interface {
 
 	//Updates the details of the account
 	Update(ctx context.Context, request UpdateRequest) (response ErrResponse)
+
+	CredStore() CredStore
 }
 
 type PasswordStore interface {
@@ -241,6 +244,10 @@ type passwordKeeper struct {
 	credentials CredStore
 }
 
+func (p passwordKeeper) CredStore() CredStore {
+	return p.credentials
+}
+
 var _ PasswordKeeper = (*passwordKeeper)(nil)
 
 func NewPasswordKeeper(
@@ -255,7 +262,9 @@ func NewPasswordKeeper(
 	}
 }
 
+
 func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
+
 	password, err := p.hasher.Hash(request.Password)
 	if err != nil {
 		msg := "could not hash the password"
