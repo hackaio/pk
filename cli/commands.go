@@ -300,7 +300,7 @@ func makeInitCommand(comm commander) *cobra.Command {
 		Run:     comm.RunCommand(Init),
 	}
 
-	initCmd.Flags().BoolP("credstore", "c", false, "store credentials")
+	initCmd.Flags().BoolP("credstore", "c", true, "store credentials")
 
 	return initCmd
 }
