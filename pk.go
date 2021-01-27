@@ -34,6 +34,14 @@ var (
 	ErrCriticalFailure   = errors.New("could not perform critical operation")
 )
 
+type RequestDecoder interface {
+
+}
+
+type ResponseEncoder interface {
+	Encode(response interface{})
+}
+
 // Hasher specifies an API for generating hashes of an arbitrary textual
 // content.
 type Hasher interface {
@@ -59,6 +67,11 @@ type Encoder interface {
 type EncoderSigner interface {
 	Encoder
 	Signer
+}
+
+type BulkAddRequest struct {
+	Token string `json:"token"`
+	Accounts []Account `json:"accounts"`
 }
 
 type Account struct {
@@ -118,7 +131,7 @@ type GetResponse struct {
 
 type ListResponse struct {
 	Accounts []Account `json:"accounts"`
-	Err      error     `json:"err"`
+	Err      error     `json:"err,omitempty"`
 }
 
 type UpdateRequest struct {
