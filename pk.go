@@ -236,6 +236,9 @@ type PasswordKeeper interface {
 	Update(ctx context.Context, request UpdateRequest) (response ErrResponse)
 
 	CredStore() CredStore
+
+	//AddMany
+	AddMany(ctx context.Context, req BulkAddRequest)(err error)
 }
 
 type PasswordStore interface {
@@ -257,6 +260,8 @@ type passwordKeeper struct {
 	credentials CredStore
 }
 
+
+
 func (p passwordKeeper) CredStore() CredStore {
 	return p.credentials
 }
@@ -273,6 +278,54 @@ func NewPasswordKeeper(
 		es:        es,
 		credentials: cs,
 	}
+}
+
+func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err error) {
+	tokenStr := req.Token
+	//fixme: check the id in token and compare it to master
+	_, err1 := p.tokenizer.Parse(tokenStr)
+	if err1 != nil {
+		return errors.Wrap(ErrPermissionDenied,err1)
+	}
+
+	accounts := req.Accounts
+
+	var a Account
+
+	var d DBAccount
+
+	for _, acc := range accounts{
+		now := time.Now().Format(time.RFC3339)
+		name := acc.Name
+		username:= acc.UserName
+		password := acc.Password
+		email := acc.Email
+
+		a = Account{
+			Name:     name,
+			UserName: username,
+			Email:    email,
+			Password: password,
+			Created:  now,
+		}
+
+		d,err = a.toDBAccount(p)
+
+		if err != nil {
+			return err
+		}
+
+		err = p.passwords.Add(ctx, d)
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+
+	}
+
+	return nil
 }
 
 

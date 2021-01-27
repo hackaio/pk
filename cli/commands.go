@@ -22,6 +22,7 @@ import (
 	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/ssh/terminal"
 	"os"
+	"path/filepath"
 )
 
 const (
@@ -231,6 +232,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 
 		cs := comm.keeper.CredStore()
 		username, err := cmd.Flags().GetString("username")
+		fileName, err := cmd.Flags().GetString("file")
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 		name, err := cmd.Flags().GetString("name")
@@ -241,31 +243,88 @@ func (comm *commander) runAddCommand() CommandFunc {
 			return
 		}
 
-		if username == "" || email == "" || password == "" ||
+		ctx := context.Background()
+
+		fileNameAvailable := len(fileName) > 4
+
+		var accounts []pk.Account
+		var br pk.BulkAddRequest
+
+		if fileNameAvailable && len(token) > 1 {
+
+			//check if its csv or json
+			ext := filepath.Ext(fileName)
+			if ext == ".json" {
+
+				jr := pk.NewJsonReader()
+				accounts, err := jr.Read(ctx, fileName)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				br = pk.BulkAddRequest{
+					Token:    token,
+					Accounts: accounts,
+				}
+
+				err = comm.keeper.AddMany(ctx, br)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				logOK()
+				return
+
+			} else if ext == ".csv" {
+
+				cr := pk.NewCsvReader()
+				_, _ = cr.Read(ctx, fileName)
+
+			} else {
+				err1 := errors.New("parse json or csv files only")
+				logError(err1)
+				os.Exit(1)
+			}
+
+			req := pk.BulkAddRequest{
+				Token:    token,
+				Accounts: accounts,
+			}
+			err := comm.keeper.AddMany(ctx, req)
+
+			if err != nil {
+				logError(err)
+				os.Exit(1)
+			}
+		} else if username == "" || email == "" || password == "" ||
 			name == "" || token == "" {
 			logUsage(cmd.Example)
 			os.Exit(1)
-		}
+		} else {
 
-		request := pk.AddRequest{
-			Token:    token,
-			Name:     name,
-			UserName: username,
-			Email:    email,
-			Password: password,
-		}
+			request := pk.AddRequest{
+				Token:    token,
+				Name:     name,
+				UserName: username,
+				Email:    email,
+				Password: password,
+			}
 
-		res := comm.keeper.Add(context.Background(), request)
+			res := comm.keeper.Add(context.Background(), request)
 
-		if res.Err != nil {
-			logError(res.Err)
+			if res.Err != nil {
+				logError(res.Err)
+				return
+			}
+
+			logOK()
 			return
 		}
-
-		logOK()
-		return
 	}
-
 }
 
 func (comm *commander) runGetCommand() CommandFunc {
@@ -396,10 +455,12 @@ func makeAddCommand(comm commander) *cobra.Command {
 	var addCmd = &cobra.Command{
 		Use:     "add",
 		Short:   "add new details to db",
-		Example: "pk add <token> <name> <username> <email> <password>",
+		Example: "pk add --file accounts.json",
 		Long:    `provide name,username,email and password to add new acc`,
 		Run:     comm.RunCommand(Add),
 	}
+
+	addCmd.PersistentFlags().StringP("file","f","","json or csv accounts file")
 
 	return addCmd
 

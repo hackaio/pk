@@ -28,12 +28,14 @@ func TestJSONReader(t *testing.T) {
 		wantErr  bool
 	}
 
+
+
 	tests = append(tests, struct {
 		name     string
 		filename string
 		want     interface{}
 		wantErr  bool
-	}{name: "test number of accounts", filename: "accounts.json", want:1000 , wantErr: false})
+	}{name: "test number of accounts", filename: "account2.json", want:13 , wantErr: false})
 
 	for index, tt := range tests {
 
