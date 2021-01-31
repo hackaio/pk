@@ -33,6 +33,25 @@ var (
 	debugMessage = "not yet implemented"
 )
 
+type UploadFormat string
+
+const (
+	JSON UploadFormat = "json"
+	CSV UploadFormat = "csv"
+)
+
+func getUploadFormat(value string)(UploadFormat,error) {
+
+	if value == "csv"{
+		return CSV,nil
+	}else if value == "json" {
+		return JSON,nil
+	}else{
+		return "", errors.New("unknown upload format")
+	}
+}
+
+
 type Command int
 
 const (
@@ -406,13 +425,19 @@ func (comm *commander) runListCommand() CommandFunc {
 		format, err := cmd.Flags().GetString("format")
 		dir, err := cmd.Flags().GetString("dir")
 
-		if out == "" && format == "" && dir == "" {
-			if limit == 0 {
-				logJSON(response.Accounts)
+	/*	fileFormat, err := getUploadFormat(format)
 
-			}else {
-				logJSON(response.Accounts[:limit])
-			}
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}*/
+
+		if limit == 0 {
+			limit = len(response.Accounts)
+		}
+
+		if out == "" && format == "" && dir == "" {
+			logJSON(response.Accounts[:limit])
 		}else {
 			if out == "" {
 				out = "accounts"
@@ -422,16 +447,49 @@ func (comm *commander) runListCommand() CommandFunc {
 				 format = "json"
 			}
 
-			//todo: how to save in home dir
+			if !(format == "json" || format == "csv"){
+				errFormat := errors.New("invalid file format")
+				logError(errFormat)
+				os.Exit(1)
+
+			}
+
+			if dir == ""{
+				path, err := os.Getwd()
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+				dir = path
+			}
+
+			req := pk.FileWriterReq{
+				Accounts: response.Accounts[:limit],
+				FileName: out,
+				FileExt:  format,
+				FileDir:  dir,
+			}
+
+			if format == "csv"{
+				csvWriter := pk.CSVReaderWriter()
+				err := csvWriter.Write(context.Background(),req)
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+			}else if format == "json"{
+				jsonWriter := pk.JsonReaderWriter()
+				err := jsonWriter.Write(context.Background(),req)
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+			}
 		}
 
 
 
 	}
-}
-
-func setDefaultValue(dValue string)  {
-
 }
 
 func (comm *commander) runUpdateCommand() CommandFunc {
@@ -550,7 +608,7 @@ func makeListCommand(comm commander) *cobra.Command {
 
 	listCmd.PersistentFlags().IntP("limit","l",0,"limits of accounts to list")
 	listCmd.PersistentFlags().StringP("out","o","","output filename")
-	listCmd.PersistentFlags().StringP("format","t","","output file format")
+	listCmd.PersistentFlags().StringP("format","m","","output file format")
 	listCmd.PersistentFlags().StringP("dir","d","","output directory")
 
 

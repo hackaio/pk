@@ -18,6 +18,7 @@ import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -48,13 +49,18 @@ type BulkWriter interface {
 	Write(ctx context.Context, request FileWriterReq) error
 }
 
+type BulkReaderWriter interface {
+	BulkReader
+	BulkWriter
+}
+
 type jsonReaderWriter struct {}
 
 func (j jsonReaderWriter) Write(ctx context.Context, request FileWriterReq) error {
 	panic("implement me")
 }
 
-func JsonReaderWriter() BulkReader {
+func JsonReaderWriter() BulkReaderWriter {
 	return &jsonReaderWriter{}
 }
 
@@ -87,13 +93,12 @@ func (j jsonReaderWriter) Read(ctx context.Context, fileName string) (res []Acco
 	return res,err
 }
 
-type csvReaderWriter struct {}
-
-func (c csvReaderWriter) Write(ctx context.Context, request FileWriterReq) error {
-	panic("implement me")
+type csvReaderWriter struct {
+	reader *csv.Reader
+	writer *csv.Writer
 }
 
-func CSVReaderWriter() BulkReader {
+func CSVReaderWriter() BulkReaderWriter {
 	return &csvReaderWriter{}
 }
 
@@ -122,6 +127,37 @@ func (c csvReaderWriter) Read(ctx context.Context, fileName string) (res []Accou
 
 	return res,err
 }
+
+
+func (c csvReaderWriter) Write(ctx context.Context, request FileWriterReq) error {
+
+	fileName := request.FileName
+	fileNameExt := fmt.Sprintf("%v.csv",fileName)
+	file, err := os.Create(fileNameExt)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	as := request.Accounts
+
+	for _, acc := range as{
+		var record []string
+
+		record = []string{acc.Name, acc.UserName, acc.Email, acc.Password, acc.Created}
+		err = writer.Write(record)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
+
+}
+
 
 
 
