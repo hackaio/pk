@@ -24,6 +24,16 @@ type loggingMiddleware struct {
 	next   PasswordKeeper
 }
 
+func (l loggingMiddleware) AddMany(ctx context.Context, req BulkAddRequest) (err error) {
+	defer func(begin time.Time) {
+		l.logger.Printf("method: add-many took: %v to add %d users and return err: %v\n",
+			time.Since(begin),len(req.Accounts),err)
+	}(time.Now())
+
+	err = l.next.AddMany(ctx,req)
+	return
+}
+
 func (l loggingMiddleware) CredStore() CredStore {
 	panic("implement me")
 }

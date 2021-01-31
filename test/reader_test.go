@@ -15,6 +15,7 @@ package test
 
 import (
 	"context"
+	"fmt"
 	"github.com/hackaio/pk"
 	"reflect"
 	"testing"
@@ -44,6 +45,7 @@ func TestJSONReader(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				c := pk.NewJsonReader()
 				gotRes, err := c.Read(context.Background(), tt.filename)
+				fmt.Printf("accounts: %v\n",gotRes)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 					return

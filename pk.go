@@ -15,6 +15,7 @@ package pk
 
 import (
 	"context"
+	"fmt"
 	"github.com/hackaio/pk/pkg/errors"
 	"time"
 )
@@ -290,11 +291,11 @@ func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err er
 
 	accounts := req.Accounts
 
-	var a Account
 
-	var d DBAccount
-
-	for _, acc := range accounts{
+	for index, acc := range accounts{
+		fmt.Printf("adding account no: %v\n",index+1)
+		var a Account
+		var d DBAccount
 		now := time.Now().Format(time.RFC3339)
 		name := acc.Name
 		username:= acc.UserName
@@ -321,7 +322,6 @@ func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err er
 			return err
 		}
 
-		return nil
 
 	}
 
