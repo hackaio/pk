@@ -34,13 +34,19 @@ func (l loggingMiddleware) AddMany(ctx context.Context, req BulkAddRequest) (err
 	return
 }
 
-func (l loggingMiddleware) CredStore() CredStore {
-	panic("implement me")
+func (l loggingMiddleware) CredStore() (cred CredStore) {
+	defer func(begin time.Time) {
+		l.logger.Printf("method: credstore took: %v to get credential manager\n",
+			time.Since(begin))
+	}(time.Now())
+
+	cred = l.next.CredStore()
+	return
 }
 
 func LoggingMiddleware(logger *log.Logger) Middleware {
 	return func(keeper PasswordKeeper) PasswordKeeper {
-		return &loggingMiddleware{next: keeper}
+		return &loggingMiddleware{next: keeper,logger: logger}
 	}
 }
 

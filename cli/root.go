@@ -20,6 +20,7 @@ import (
 	"github.com/hackaio/pk/pg"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
+	"log"
 	"os"
 
 	jwt "github.com/hackaio/pk/jwt"
@@ -81,6 +82,12 @@ func init() {
 	cs := credstore.New()
 
 	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es,cs)
+
+	logg := log.New(os.Stdout,"pk ::",1)
+
+	mdw := pk.LoggingMiddleware(logg)
+
+	keeper = pk.WireInMiddlewares(keeper,[]pk.Middleware{mdw})
 
 	comm := commander{keeper: keeper}
 
