@@ -13,10 +13,12 @@
 
 package pk
 
-
 import (
+	"bufio"
 	"context"
+	"encoding/csv"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"os"
 )
@@ -73,7 +75,29 @@ func NewCsvReader() BulkReader {
 }
 
 func (c csvReader) Read(ctx context.Context, fileName string) (res []Account, err error) {
-	panic("implement me")
+	csvFile,err := os.Open(fileName)
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			err = nil
+		}
+
+		acc := Account{
+			Name:     line[0],
+			UserName: line[1],
+			Email:    line[2],
+			Password: line[3],
+		}
+
+		res = append(res,acc)
+
+	}
+
+	return res,err
 }
 
 

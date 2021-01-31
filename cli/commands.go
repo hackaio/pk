@@ -282,7 +282,28 @@ func (comm *commander) runAddCommand() CommandFunc {
 			} else if ext == ".csv" {
 
 				cr := pk.NewCsvReader()
-				_, _ = cr.Read(ctx, fileName)
+				accounts, err = cr.Read(ctx, fileName)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				br = pk.BulkAddRequest{
+					Token:    token,
+					Accounts: accounts,
+				}
+
+				err = comm.keeper.AddMany(ctx, br)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				logOK()
+				return
+
 
 			} else {
 				err1 := errors.New("parse json or csv files only")
