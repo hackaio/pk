@@ -382,8 +382,33 @@ func (comm *commander) runDeleteCommand() CommandFunc {
 }
 
 func (comm *commander) runListCommand() CommandFunc {
+
+	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
-		logMessage("error", debugMessage)
+		limit, err := cmd.Flags().GetInt("limit")
+		token, err := cs.Get(pk.AppName, "token")
+
+		if err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		req := pk.ListRequest{Token: token}
+
+		response := comm.keeper.List(context.Background(),req)
+
+		if response.Err != nil {
+			logError(err)
+			os.Exit(1)
+		}
+
+		if limit == 0 {
+			logJSON(response.Accounts)
+
+		}else {
+			logJSON(response.Accounts[:limit])
+		}
+
 	}
 }
 
@@ -500,6 +525,8 @@ func makeListCommand(comm commander) *cobra.Command {
 		Long:    `list all accounts details`,
 		Run:     comm.RunCommand(List),
 	}
+
+	listCmd.PersistentFlags().IntP("limit","l",0,"limits of accounts to list")
 
 	return listCmd
 }

@@ -94,13 +94,13 @@ func (l loggingMiddleware) Delete(ctx context.Context, request GetRequest) (err 
 	return
 }
 
-func (l loggingMiddleware) List(ctx context.Context) (list ListResponse) {
+func (l loggingMiddleware) List(ctx context.Context, req ListRequest) (list ListResponse) {
 	defer func(begin time.Time) {
 		l.logger.Printf("method: list took: %v to retrieve all users (%v) and returned with err: %v \n",
 			time.Since(begin),len(list.Accounts),list.Err)
 	}(time.Now())
 
-	list = l.next.List(ctx)
+	list = l.next.List(ctx,req)
 	return
 }
 

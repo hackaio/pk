@@ -130,6 +130,9 @@ type GetResponse struct {
 	Err error `json:"err"`
 }
 
+type ListRequest struct {
+	Token string
+}
 type ListResponse struct {
 	Accounts []Account `json:"accounts"`
 	Err      error     `json:"err,omitempty"`
@@ -231,7 +234,7 @@ type PasswordKeeper interface {
 
 	//List returns all the accounts registered under the master
 	//accounts
-	List(ctx context.Context) (list ListResponse)
+	List(ctx context.Context,request ListRequest) (list ListResponse)
 
 	//Updates the details of the account
 	Update(ctx context.Context, request UpdateRequest) (response ErrResponse)
@@ -496,8 +499,17 @@ func (p passwordKeeper) Delete(ctx context.Context, request GetRequest) (err Err
 	panic("implement me")
 }
 
-func (p passwordKeeper) List(ctx context.Context) (list ListResponse) {
+func (p passwordKeeper) List(ctx context.Context,request ListRequest) (list ListResponse) {
 
+	tokenStr := request.Token
+	_,err :=p.tokenizer.Parse(tokenStr)
+
+	if err != nil {
+		return ListResponse{
+			Accounts: nil,
+			Err:      err,
+		}
+	}
 	var accounts [] Account
 	dbAccounts, err := p.passwords.List(ctx)
 
