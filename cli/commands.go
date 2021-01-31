@@ -311,16 +311,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 				os.Exit(1)
 			}
 
-			req := pk.BulkAddRequest{
-				Token:    token,
-				Accounts: accounts,
-			}
-			err := comm.keeper.AddMany(ctx, req)
 
-			if err != nil {
-				logError(err)
-				os.Exit(1)
-			}
 		} else if username == "" || email == "" || password == "" ||
 			name == "" || token == "" {
 			logUsage(cmd.Example)
