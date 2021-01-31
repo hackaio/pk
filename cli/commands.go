@@ -527,6 +527,10 @@ func makeListCommand(comm commander) *cobra.Command {
 	}
 
 	listCmd.PersistentFlags().IntP("limit","l",0,"limits of accounts to list")
+	listCmd.PersistentFlags().StringP("out","o","","output filename")
+	listCmd.PersistentFlags().StringP("format","t","","output file format")
+	listCmd.PersistentFlags().StringP("dir","d","","output directory")
+
 
 	return listCmd
 }
