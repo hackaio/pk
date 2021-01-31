@@ -162,5 +162,36 @@ func (p pgStore) Update(ctx context.Context, name, username string, account pk.D
 }
 
 func (p pgStore) List(ctx context.Context) (accounts []pk.DBAccount, err error) {
-	panic("implement me")
+
+	rows, err := p.db.Query(stmt.LIST)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next(){
+		var account pk.DBAccount
+
+		err = rows.Scan(
+			&account.Name,
+			&account.UserName,
+			&account.Email,
+			&account.Hash,
+			&account.Encoded,
+			account.Digest,
+			&account.Signature,
+			&account.Created,
+			)
+
+		accounts = append(accounts,account)
+	}
+
+	err = rows.Err()
+
+	if err != nil{
+		return accounts, err
+	}
+
+	return accounts,err
 }

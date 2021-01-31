@@ -497,7 +497,34 @@ func (p passwordKeeper) Delete(ctx context.Context, request GetRequest) (err Err
 }
 
 func (p passwordKeeper) List(ctx context.Context) (list ListResponse) {
-	panic("implement me")
+
+	var accounts [] Account
+	dbAccounts, err := p.passwords.List(ctx)
+
+	if err != nil{
+		return ListResponse{
+			Accounts: nil,
+			Err:      err,
+		}
+	}
+
+	for _, dba := range dbAccounts{
+		a, err := dba.toAccount(p)
+
+		if err != nil {
+			return ListResponse{
+				Accounts: accounts,
+				Err:      err,
+			}
+		}
+
+		accounts = append(accounts,a)
+	}
+
+	return ListResponse{
+		Accounts: accounts,
+		Err:      err,
+	}
 }
 
 func (p passwordKeeper) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
