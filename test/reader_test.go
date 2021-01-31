@@ -43,7 +43,7 @@ func TestJSONReader(t *testing.T) {
 		//test length of array loaded from accounts.json
 		if index == 0 {
 			t.Run(tt.name, func(t *testing.T) {
-				c := pk.NewJsonReader()
+				c := pk.JsonReaderWriter()
 				gotRes, err := c.Read(context.Background(), tt.filename)
 				fmt.Printf("accounts: %v\n",gotRes)
 				if (err != nil) != tt.wantErr {

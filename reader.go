@@ -24,26 +24,45 @@ import (
 )
 
 var (
-	_ BulkReader = (*jsonReader)(nil)
+	_ BulkReader = (*jsonReaderWriter)(nil)
 	
-	_ BulkReader = (*csvReader)(nil)
+	_ BulkReader = (*csvReaderWriter)(nil)
+
+	_ BulkWriter = (*jsonReaderWriter)(nil)
+
+	_ BulkWriter = (*csvReaderWriter)(nil)
 )
+
+type FileWriterReq struct {
+	Accounts []Account
+	FileName string
+	FileExt string
+	FileDir string
+}
 
 type BulkReader interface {
 	Read(ctx context.Context, fileName string)(res []Account,err error)
 }
 
-type jsonReader struct {}
+type BulkWriter interface {
+	Write(ctx context.Context, request FileWriterReq) error
+}
 
-func NewJsonReader() BulkReader {
-	return &jsonReader{}
+type jsonReaderWriter struct {}
+
+func (j jsonReaderWriter) Write(ctx context.Context, request FileWriterReq) error {
+	panic("implement me")
+}
+
+func JsonReaderWriter() BulkReader {
+	return &jsonReaderWriter{}
 }
 
 type accounts struct {
 	Accounts []Account `json:"accounts"`
 }
 
-func (j jsonReader) Read(ctx context.Context, fileName string) (res []Account, err error) {
+func (j jsonReaderWriter) Read(ctx context.Context, fileName string) (res []Account, err error) {
 	// Open our jsonFile
 	jsonFile, err := os.Open(fileName)
 	// if we os.Open returns an error then handle it
@@ -68,13 +87,17 @@ func (j jsonReader) Read(ctx context.Context, fileName string) (res []Account, e
 	return res,err
 }
 
-type csvReader struct {}
+type csvReaderWriter struct {}
 
-func NewCsvReader() BulkReader {
-	return &csvReader{}
+func (c csvReaderWriter) Write(ctx context.Context, request FileWriterReq) error {
+	panic("implement me")
 }
 
-func (c csvReader) Read(ctx context.Context, fileName string) (res []Account, err error) {
+func CSVReaderWriter() BulkReader {
+	return &csvReaderWriter{}
+}
+
+func (c csvReaderWriter) Read(ctx context.Context, fileName string) (res []Account, err error) {
 	csvFile,err := os.Open(fileName)
 	reader := csv.NewReader(bufio.NewReader(csvFile))
 

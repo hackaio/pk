@@ -256,7 +256,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 			ext := filepath.Ext(fileName)
 			if ext == ".json" {
 
-				jr := pk.NewJsonReader()
+				jr := pk.JsonReaderWriter()
 				accounts, err := jr.Read(ctx, fileName)
 
 				if err != nil {
@@ -281,7 +281,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 
 			} else if ext == ".csv" {
 
-				cr := pk.NewCsvReader()
+				cr := pk.CSVReaderWriter()
 				accounts, err = cr.Read(ctx, fileName)
 
 				if err != nil {
@@ -402,14 +402,36 @@ func (comm *commander) runListCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		if limit == 0 {
-			logJSON(response.Accounts)
+		out, err := cmd.Flags().GetString("out")
+		format, err := cmd.Flags().GetString("format")
+		dir, err := cmd.Flags().GetString("dir")
 
+		if out == "" && format == "" && dir == "" {
+			if limit == 0 {
+				logJSON(response.Accounts)
+
+			}else {
+				logJSON(response.Accounts[:limit])
+			}
 		}else {
-			logJSON(response.Accounts[:limit])
+			if out == "" {
+				out = "accounts"
+			}
+
+			if format == "" {
+				 format = "json"
+			}
+
+			//todo: how to save in home dir
 		}
 
+
+
 	}
+}
+
+func setDefaultValue(dValue string)  {
+
 }
 
 func (comm *commander) runUpdateCommand() CommandFunc {
