@@ -16,32 +16,13 @@ package pk
 import (
 	"context"
 	"log"
-	"time"
 )
+
+var _ PasswordKeeper = (*loggingMiddleware)(nil)
 
 type loggingMiddleware struct {
 	logger *log.Logger
 	next   PasswordKeeper
-}
-
-func (l loggingMiddleware) AddMany(ctx context.Context, req BulkAddRequest) (err error) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: add-many took: %v to add %d users and return err: %v\n",
-			time.Since(begin),len(req.Accounts),err)
-	}(time.Now())
-
-	err = l.next.AddMany(ctx,req)
-	return
-}
-
-func (l loggingMiddleware) CredStore() (cred CredStore) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: credstore took: %v to get credential manager\n",
-			time.Since(begin))
-	}(time.Now())
-
-	cred = l.next.CredStore()
-	return
 }
 
 func LoggingMiddleware(logger *log.Logger) Middleware {
@@ -50,72 +31,40 @@ func LoggingMiddleware(logger *log.Logger) Middleware {
 	}
 }
 
-func (l loggingMiddleware) Register(ctx context.Context, request RegisterRequest) (err ErrResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: register took: %v to register user with id: %v and return err: %v\n",
-			time.Since(begin),request.Username,err.Err)
-	}(time.Now())
-
-	err = l.next.Register(ctx,request)
-	return
+func (l loggingMiddleware) Register(ctx context.Context, username, email, password string) (err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: login took: %v to generate token for user with id: %v and return err: %v\n",
-			time.Since(begin),request.UserName,response.Err)
-	}(time.Now())
-
-	response = l.next.Login(ctx,request)
-	return
+func (l loggingMiddleware) Login(ctx context.Context, username, password string) (token string, err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) Add(ctx context.Context, request AddRequest) (err ErrResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: add took: %v to add new user with id: %v and return err: %v\n",
-			time.Since(begin),request.UserName,err.Err)
-	}(time.Now())
-
-	err = l.next.Add(ctx,request)
-	return
+func (l loggingMiddleware) Add(ctx context.Context, token string, account Account) (err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) Get(ctx context.Context, request GetRequest) (response GetResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: get took: %v to retrieve user with id: %v \n",
-			time.Since(begin),request.UserName)
-	}(time.Now())
-
-	response = l.next.Get(ctx,request)
-	return
+func (l loggingMiddleware) Get(ctx context.Context, token, name, username string) (account Account, err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) Delete(ctx context.Context, request GetRequest) (err ErrResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: delete took: %v to delete user with id: %v and returned err : %v\n",
-			time.Since(begin),request.UserName,err.Err)
-	}(time.Now())
-
-	err = l.next.Delete(ctx,request)
-	return
+func (l loggingMiddleware) Delete(ctx context.Context, token, name, username string) (err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) List(ctx context.Context, req ListRequest) (list ListResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: list took: %v to retrieve all users (%v) and returned with err: %v \n",
-			time.Since(begin),len(list.Accounts),list.Err)
-	}(time.Now())
-
-	list = l.next.List(ctx,req)
-	return
+func (l loggingMiddleware) List(ctx context.Context, token string, args map[string]interface{}) (accounts []Account, err error) {
+	panic("implement me")
 }
 
-func (l loggingMiddleware) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
-	defer func(begin time.Time) {
-		l.logger.Printf("method: update took: %v to update acc with username: %v \n",
-			time.Since(begin),request.Username)
-	}(time.Now())
-
-	response = l.next.Update(ctx,request)
-	return
+func (l loggingMiddleware) Update(ctx context.Context, token, name, username, account Account) (acc Account, err error) {
+	panic("implement me")
 }
+
+func (l loggingMiddleware) AddAll(ctx context.Context, token string, accounts []Account) (err error) {
+	panic("implement me")
+}
+
+func (l loggingMiddleware) DeleteAll(ctx context.Context, token string, args map[string]interface{}) (err error) {
+	panic("implement me")
+}
+
+

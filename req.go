@@ -13,6 +13,8 @@
 
 package pk
 
+import "github.com/hackaio/pk/v0.1.0/pk"
+
 // RegisterRequest collects the request parameters for the Register method.
 type RegisterRequest struct {
 	Username string `json:"username"`
@@ -49,8 +51,8 @@ func (r LoginResponse) Failed() error {
 
 // AddRequest collects the request parameters for the Add method.
 type AddRequest struct {
-	Token   string  `json:"token"`
-	Account Account `json:"account"`
+	Token   string     `json:"token"`
+	Account pk.Account `json:"account"`
 }
 
 // AddResponse collects the response parameters for the Add method.
@@ -72,8 +74,8 @@ type GetRequest struct {
 
 // GetResponse collects the response parameters for the Get method.
 type GetResponse struct {
-	Account Account `json:"account"`
-	Err     error   `json:"err"`
+	Account pk.Account `json:"account"`
+	Err     error      `json:"err"`
 }
 
 // Failed implements Failer.
@@ -106,8 +108,8 @@ type ListRequest struct {
 
 // ListResponse collects the response parameters for the List method.
 type ListResponse struct {
-	Accounts []Account `json:"accounts"`
-	Err      error     `json:"err"`
+	Accounts []pk.Account `json:"accounts"`
+	Err      error        `json:"err"`
 }
 
 // Failed implements Failer.
@@ -117,16 +119,16 @@ func (r ListResponse) Failed() error {
 
 // UpdateRequest collects the request parameters for the Update method.
 type UpdateRequest struct {
-	Token    Account `json:"token"`
-	Name     Account `json:"name"`
-	Username Account `json:"username"`
-	Account  Account `json:"account"`
+	Token    pk.Account `json:"token"`
+	Name     pk.Account `json:"name"`
+	Username pk.Account `json:"username"`
+	Account  pk.Account `json:"account"`
 }
 
 // UpdateResponse collects the response parameters for the Update method.
 type UpdateResponse struct {
-	Acc Account `json:"acc"`
-	Err error   `json:"err"`
+	Acc pk.Account `json:"acc"`
+	Err error      `json:"err"`
 }
 
 // Failed implements Failer.
@@ -136,8 +138,8 @@ func (r UpdateResponse) Failed() error {
 
 // AddAllRequest collects the request parameters for the AddAll method.
 type AddAllRequest struct {
-	Token    string    `json:"token"`
-	Accounts []Account `json:"accounts"`
+	Token    string       `json:"token"`
+	Accounts []pk.Account `json:"accounts"`
 }
 
 // AddAllResponse collects the response parameters for the AddAll method.

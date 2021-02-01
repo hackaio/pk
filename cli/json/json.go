@@ -11,33 +11,36 @@
  * limitations under the License.
  */
 
-package pk
+package json
 
-import "time"
+import (
+	"context"
+	cli2 "github.com/hackaio/pk/cli"
+	"github.com/hackaio/pk/v0.1.0/pk"
+)
 
-type Token struct {
-	ID        string
-	IssuerID  string
-	Subject   string
-	IssuedAt  time.Time
-	ExpiresAt time.Time
+var (
+	_ cli2.BulkReader = (*reader)(nil)
+	_ cli2.BulkWriter = (*writer)(nil)
+)
+
+type reader struct {}
+
+func NewReader() cli2.BulkReader {
+	return &reader{}
 }
 
-func NewToken(id string) Token {
-	return Token{
-		ID:        id,
-		IssuerID:  "pk-tokenizer",
-		Subject:   "pk-master-auth",
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(10 * time.Minute),
-	}
+func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
+	panic("implement me")
 }
 
-// Tokenizer specifies API for encoding and decoding between string and Key.
-type Tokenizer interface {
-	// Issue converts Token to its string representation.
-	Issue(token Token) (string, error)
+type writer struct {}
 
-	// Parse extracts Token data from string token.
-	Parse(string) (Token, error)
+func NewWriter() cli2.BulkWriter {
+	return &writer{}
 }
+
+func (w *writer) Write(ctx context.Context, request cli2.FileWriterReq) error {
+	panic("implement me")
+}
+

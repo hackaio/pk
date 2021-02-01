@@ -52,25 +52,16 @@ func getUploadFormat(value string) (UploadFormat, error) {
 	}
 }
 
-type Command int
 
-const (
-	Init Command = iota
-	Login
-	Add
-	Get
-	Delete
-	List
-	Update
-	DB
-)
 
-//CommandFunc wraps the run func in cobra.Command
-type CommandFunc func(cmd *cobra.Command, args []string)
+//RunFunc wraps the run func in cobra.Command
+type RunFunc func(cmd *cobra.Command, args []string)
 
 type commander struct {
-	keeper    pk.PasswordKeeper
-	credstore pk.CredStore
+	keeper      pk.PasswordKeeper
+	credentials CredStore
+	reader      BulkReader
+	writer      BulkWriter
 }
 
 //Commands a struct with all pk commands
@@ -103,7 +94,7 @@ func MakeAllCommands(comm commander) Commands {
 	}
 }
 
-func (comm *commander) runInitCommand() CommandFunc {
+func (comm *commander) runInitCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		email, err := cmd.Flags().GetString("email")
@@ -147,9 +138,8 @@ func (comm *commander) runInitCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		cs := comm.keeper.CredStore()
 
-		err = cs.Set(pk.AppName, username, string(password))
+		err = comm.credentials.Set(pk.AppName, username, string(password))
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
@@ -173,7 +163,7 @@ func (comm *commander) runInitCommand() CommandFunc {
 	}
 }
 
-func (comm *commander) runLoginCommand() CommandFunc {
+func (comm *commander) runLoginCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 
@@ -182,11 +172,11 @@ func (comm *commander) runLoginCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		cs := comm.keeper.CredStore()
+
 
 		var password string
 
-		password, err = cs.Get(pk.AppName, username)
+		password, err = comm.credentials.Get(pk.AppName, username)
 
 		if err != nil || password == "" {
 
@@ -221,7 +211,7 @@ func (comm *commander) runLoginCommand() CommandFunc {
 				password = string(passwordBytes)
 
 				//fixme
-				_ = cs.Set(pk.AppName, username, password)
+				_ = comm.credentials.Set(pk.AppName, username, password)
 
 				return
 			} else {
@@ -239,7 +229,7 @@ func (comm *commander) runLoginCommand() CommandFunc {
 			os.Exit(1)
 		}
 
-		err = cs.Set(pk.AppName, "token", response.Token)
+		err = comm.credentials.Set(pk.AppName, "token", response.Token)
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
@@ -253,7 +243,7 @@ func (comm *commander) runLoginCommand() CommandFunc {
 
 }
 
-func (comm *commander) runAddCommand() CommandFunc {
+func (comm *commander) runAddCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 
 		cs := comm.keeper.CredStore()
@@ -363,7 +353,7 @@ func (comm *commander) runAddCommand() CommandFunc {
 	}
 }
 
-func (comm *commander) runGetCommand() CommandFunc {
+func (comm *commander) runGetCommand() RunFunc {
 
 	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
@@ -399,13 +389,13 @@ func (comm *commander) runGetCommand() CommandFunc {
 
 }
 
-func (comm *commander) runDeleteCommand() CommandFunc {
+func (comm *commander) runDeleteCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) runListCommand() CommandFunc {
+func (comm *commander) runListCommand() RunFunc {
 
 	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
@@ -495,19 +485,19 @@ func (comm *commander) runListCommand() CommandFunc {
 	}
 }
 
-func (comm *commander) runUpdateCommand() CommandFunc {
+func (comm *commander) runUpdateCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) runDBCommand() CommandFunc {
+func (comm *commander) runDBCommand() RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) RunCommand(command Command) CommandFunc {
+func (comm *commander) RunCommand(command Command) RunFunc {
 
 	switch command {
 

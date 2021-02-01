@@ -34,6 +34,6 @@ const (
 type RunFunc func(cmd *cobra.Command, args []string)
 
 type Runner interface {
-	Run(command Command)RunFunc
+	Run(command Command) RunFunc
 }
 

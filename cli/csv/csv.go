@@ -11,29 +11,38 @@
  * limitations under the License.
  */
 
-package credstore
+package csv
 
 import (
-	"github.com/hackaio/pk"
-	"github.com/zalando/go-keyring"
+	"context"
+	cli2 "github.com/hackaio/pk/cli"
+	"github.com/hackaio/pk/v0.1.0/pk"
 )
 
-type cred struct{}
+var (
+	_ cli2.BulkReader = (*reader)(nil)
+	_ cli2.BulkWriter = (*writer)(nil)
+)
 
-var _ pk.CredStore = (*cred)(nil)
+type reader struct {}
 
-func New() pk.CredStore {
-	return &cred{}
+func NewReader() cli2.BulkReader {
+	return &reader{}
 }
 
-func (c *cred) Set(service, user, password string) error {
-	return keyring.Set(service, user, password)
+func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
+	panic("implement me")
 }
 
-func (c *cred) Get(service, user string) (string, error) {
-	return keyring.Get(service, user)
+type writer struct {}
+
+func NewWriter() cli2.BulkWriter {
+	return &writer{}
 }
 
-func (c *cred) Delete(service, user string) error {
-	return keyring.Delete(service, user)
+func (w *writer) Write(ctx context.Context, request cli2.FileWriterReq) error {
+	panic("implement me")
 }
+
+
+
