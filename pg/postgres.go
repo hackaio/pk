@@ -113,14 +113,14 @@ func NewStore(db *sql.DB) pk.PasswordStore {
 }
 
 func (p pgStore) AddOwner(ctx context.Context, account pk.Account) (err error) {
-	_, err = p.db.Exec(stmt.ADD_OWNER,account.Name, account.UserName,
+	_, err = p.db.Exec(stmt.ADD_OWNER, account.Name, account.UserName,
 		account.Email, account.Password, account.Created)
 	return err
 }
 
 func (p pgStore) GetOwner(ctx context.Context, name, username string) (account pk.Account, err error) {
 
-	err = p.db.QueryRow(stmt.GET_OWNER, name,username).Scan(&account.Name, &account.UserName,
+	err = p.db.QueryRow(stmt.GET_OWNER, name, username).Scan(&account.Name, &account.UserName,
 		&account.Email, &account.Password, &account.Created)
 
 	return account, err
@@ -145,9 +145,9 @@ func (p pgStore) Add(ctx context.Context, account pk.DBAccount) (err error) {
 }
 
 func (p pgStore) Get(ctx context.Context, name, username string) (account pk.DBAccount, err error) {
-	err = p.db.QueryRow(stmt.GET, name,username).
+	err = p.db.QueryRow(stmt.GET, name, username).
 		Scan(&account.Name, &account.UserName, &account.Email,
-			&account.Hash,&account.Encoded, &account.Digest,
+			&account.Hash, &account.Encoded, &account.Digest,
 			&account.Signature, &account.Created)
 
 	return account, err
@@ -170,7 +170,7 @@ func (p pgStore) List(ctx context.Context) (accounts []pk.DBAccount, err error) 
 
 	defer rows.Close()
 
-	for rows.Next(){
+	for rows.Next() {
 		var account pk.DBAccount
 
 		err = rows.Scan(
@@ -182,16 +182,16 @@ func (p pgStore) List(ctx context.Context) (accounts []pk.DBAccount, err error) 
 			account.Digest,
 			&account.Signature,
 			&account.Created,
-			)
+		)
 
-		accounts = append(accounts,account)
+		accounts = append(accounts, account)
 	}
 
 	err = rows.Err()
 
-	if err != nil{
+	if err != nil {
 		return accounts, err
 	}
 
-	return accounts,err
+	return accounts, err
 }

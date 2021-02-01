@@ -38,7 +38,6 @@ type rsaEncoderSigner struct {
 var _ pk.Encoder = (*rsaEncoderSigner)(nil)
 var _ pk.Signer = (*rsaEncoderSigner)(nil)
 
-
 func NewEncoderSigner(homeDir string) (es pk.EncoderSigner, err error) {
 
 	credsDir := filepath.Join(homeDir, pk.AppDir, pk.CredDir)

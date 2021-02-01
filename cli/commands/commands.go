@@ -29,11 +29,9 @@ const (
 	DB
 )
 
-
 //RunFunc wraps the run func in cobra.Command
 type RunFunc func(cmd *cobra.Command, args []string)
 
 type Runner interface {
 	Run(command Command) RunFunc
 }
-

@@ -13,8 +13,6 @@
 
 package pk
 
-
-
 // Hasher specifies an API for generating hashes of an arbitrary textual
 // content.
 type Hasher interface {

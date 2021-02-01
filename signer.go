@@ -13,7 +13,6 @@
 
 package pk
 
-
 type Signer interface {
 	Sign(string) ([]byte, []byte, error)
 

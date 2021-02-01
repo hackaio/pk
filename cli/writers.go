@@ -21,11 +21,10 @@ import (
 type FileWriterReq struct {
 	Accounts []pk.Account
 	FileName string
-	FileExt string
-	FileDir string
+	FileExt  string
+	FileDir  string
 }
 
 type BulkWriter interface {
 	Write(ctx context.Context, request FileWriterReq) error
 }
-

@@ -35,22 +35,19 @@ var (
 	debugMessage = "not yet implemented"
 )
 
-
-
-
 type commander struct {
 	keeper      pk.PasswordKeeper
 	credentials CredStore
-	csvReader      BulkReader
-	csvWriter      BulkWriter
-	jsonReader     BulkReader
-	jsonWriter     BulkWriter
+	csvReader   BulkReader
+	csvWriter   BulkWriter
+	jsonReader  BulkReader
+	jsonWriter  BulkWriter
 }
 
 var _ commands.Runner = (*commander)(nil)
 
-func NewCommandsRunner(keeper pk.PasswordKeeper,store CredStore,
-	csvReader BulkReader, csvWriter BulkWriter,jsonReader BulkReader,
+func NewCommandsRunner(keeper pk.PasswordKeeper, store CredStore,
+	csvReader BulkReader, csvWriter BulkWriter, jsonReader BulkReader,
 	jsonWriter BulkWriter) commands.Runner {
 	return &commander{
 		keeper:      keeper,
@@ -64,33 +61,30 @@ func NewCommandsRunner(keeper pk.PasswordKeeper,store CredStore,
 
 //Commands a struct with all pk commands
 type Commands struct {
-	Init   *cobra.Command
+	Init     *cobra.Command
 	Register *cobra.Command
-	Login  *cobra.Command
-	Add    *cobra.Command
-	Get    *cobra.Command
-	Delete *cobra.Command
-	Update *cobra.Command
-	DB     *cobra.Command
-	List   *cobra.Command
+	Login    *cobra.Command
+	Add      *cobra.Command
+	Get      *cobra.Command
+	Delete   *cobra.Command
+	Update   *cobra.Command
+	DB       *cobra.Command
+	List     *cobra.Command
 }
-
 
 func MakeAllCommands(comm commander) Commands {
 	return Commands{
-		Init:   makeInitCommand(comm),
+		Init:     makeInitCommand(comm),
 		Register: makeRegisterCommand(comm),
-		Login:  makeLoginCommand(comm),
-		Add:    makeAddCommand(comm),
-		Get:    makeGetCommand(comm),
-		Delete: makeDeleteCommand(comm),
-		Update: makeUpdateCommand(comm),
-		DB:     makeDBCommand(comm),
-		List:   makeListCommand(comm),
+		Login:    makeLoginCommand(comm),
+		Add:      makeAddCommand(comm),
+		Get:      makeGetCommand(comm),
+		Delete:   makeDeleteCommand(comm),
+		Update:   makeUpdateCommand(comm),
+		DB:       makeDBCommand(comm),
+		List:     makeListCommand(comm),
 	}
 }
-
-
 
 func (comm *commander) runInitCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
@@ -136,7 +130,6 @@ func (comm *commander) runInitCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-
 		err = comm.credentials.Set(pk.AppName, username, string(password))
 
 		if err != nil {
@@ -145,7 +138,7 @@ func (comm *commander) runInitCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-		err = comm.keeper.Register(context.Background(),username,email,string(password))
+		err = comm.keeper.Register(context.Background(), username, email, string(password))
 
 		if err != nil {
 			logError(err)
@@ -165,8 +158,6 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 			logError(err)
 			os.Exit(1)
 		}
-
-
 
 		var password string
 
@@ -214,8 +205,7 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 			}
 		}
 
-
-		token, err := comm.keeper.Login(context.Background(), username,password)
+		token, err := comm.keeper.Login(context.Background(), username, password)
 		if err != nil {
 			logError(err)
 			os.Exit(1)
@@ -256,7 +246,6 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 
 		var accounts []pk.Account
 
-
 		if fileNameAvailable && len(token) > 1 {
 
 			//check if its csv or json
@@ -270,9 +259,7 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 					os.Exit(1)
 				}
 
-
-
-				err = comm.keeper.AddAll(ctx,token,accounts)
+				err = comm.keeper.AddAll(ctx, token, accounts)
 
 				if err != nil {
 					logError(err)
@@ -291,9 +278,7 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 					os.Exit(1)
 				}
 
-
-
-				err = comm.keeper.AddAll(ctx, token,accounts)
+				err = comm.keeper.AddAll(ctx, token, accounts)
 
 				if err != nil {
 					logError(err)
@@ -315,7 +300,6 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 			os.Exit(1)
 		} else {
 
-
 			account := pk.Account{
 				Name:     name,
 				UserName: username,
@@ -323,7 +307,7 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 				Password: password,
 			}
 
-			err = comm.keeper.Add(context.Background(),token,account)
+			err = comm.keeper.Add(context.Background(), token, account)
 
 			if err != nil {
 				logError(err)
@@ -353,7 +337,7 @@ func (comm *commander) runGetCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-		response,err := comm.keeper.Get(context.Background(),token,name,username)
+		response, err := comm.keeper.Get(context.Background(), token, name, username)
 
 		if err != nil {
 			logError(err)
@@ -384,8 +368,8 @@ func (comm *commander) runListCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-		var argx  map[string]interface{}
-		accounts,err := comm.keeper.List(context.Background(), token,argx)
+		var argx map[string]interface{}
+		accounts, err := comm.keeper.List(context.Background(), token, argx)
 
 		if err != nil {
 			logError(err)
@@ -530,8 +514,6 @@ func makeRegisterCommand(comm commander) *cobra.Command {
 		Example: "pk init -u <username> -e <email>",
 		Run:     comm.Run(commands.Register),
 	}
-
-
 
 	return regCmd
 }

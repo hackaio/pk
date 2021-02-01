@@ -28,11 +28,10 @@ const (
 )
 
 var (
-	ErrPermissionDenied  = errors.New("permission denied")
-	ErrInternalError     = errors.New("internal error, possible db compromise")
-	ErrCriticalFailure   = errors.New("could not perform critical operation")
+	ErrPermissionDenied = errors.New("permission denied")
+	ErrInternalError    = errors.New("internal error, possible db compromise")
+	ErrCriticalFailure  = errors.New("could not perform critical operation")
 )
-
 
 type Account struct {
 	Name     string `json:"name,omitempty"`
@@ -52,8 +51,6 @@ type DBAccount struct {
 	Signature []byte `json:"signature,omitempty"`
 	Created   string `json:"created,omitempty"`
 }
-
-
 
 func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount, error) {
 
@@ -148,16 +145,13 @@ type PasswordKeeper interface {
 	//e.g You want to delete all accounts by name of instagram
 	//or you want to delete all accounts registered under a certain email address
 	DeleteAll(ctx context.Context, token string, args map[string]interface{}) (err error)
-
 }
 
-
-
 type passwordKeeper struct {
-	hasher      Hasher
-	passwords   PasswordStore
-	tokenizer   Tokenizer
-	es          EncoderSigner
+	hasher    Hasher
+	passwords PasswordStore
+	tokenizer Tokenizer
+	es        EncoderSigner
 }
 
 var _ PasswordKeeper = (*passwordKeeper)(nil)
@@ -166,11 +160,10 @@ func NewPasswordKeeper(
 	hasher Hasher, store PasswordStore,
 	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
 	return &passwordKeeper{
-		hasher:      hasher,
-		passwords:   store,
-		tokenizer:   tokenizer,
-		es:          es,
-
+		hasher:    hasher,
+		passwords: store,
+		tokenizer: tokenizer,
+		es:        es,
 	}
 }
 
@@ -179,7 +172,6 @@ func (p passwordKeeper) Register(ctx context.Context, username, email, password 
 	if err != nil {
 		return err
 	}
-
 
 	created := time.Now().UTC().Format(time.RFC3339)
 	dbAccount := Account{
@@ -193,7 +185,7 @@ func (p passwordKeeper) Register(ctx context.Context, username, email, password 
 	err = p.passwords.AddOwner(ctx, dbAccount)
 
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("could not register new user ; %v\n",err))
+		err1 := errors.New(fmt.Sprintf("could not register new user ; %v\n", err))
 		return err1
 	}
 
@@ -204,13 +196,13 @@ func (p passwordKeeper) Login(ctx context.Context, username, password string) (t
 
 	account, err := p.passwords.GetOwner(ctx, "master", username)
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("could not retrieve user details: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("could not retrieve user details: %v\n", err))
 		return "", err1
 	}
 
 	err = p.hasher.Compare(password, account.Password)
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("credentials comaprison failed: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("credentials comaprison failed: %v\n", err))
 		return "", err1
 	}
 
@@ -218,7 +210,7 @@ func (p passwordKeeper) Login(ctx context.Context, username, password string) (t
 
 	tokenStr, err = p.tokenizer.Issue(token)
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("could not generate access token: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("could not generate access token: %v\n", err))
 		return "", err1
 	}
 
@@ -230,22 +222,21 @@ func (p passwordKeeper) Add(ctx context.Context, token string, account Account) 
 	//fixme: check the id in token and compare it to master
 	_, err1 := p.tokenizer.Parse(token)
 	if err1 != nil {
-		err1 := errors.New(fmt.Sprintf("error while parsing the token: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("error while parsing the token: %v\n", err))
 		return err1
 	}
-
 
 	dbAccount, err2 := account.toDBAccount(p)
 
 	if err2 != nil {
-		err1 := errors.New(fmt.Sprintf("error while encrypting user details: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("error while encrypting user details: %v\n", err))
 		return err1
 	}
 
 	err3 := p.passwords.Add(ctx, dbAccount)
 
 	if err3 != nil {
-		err1 := errors.New(fmt.Sprintf("could not store user details: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("could not store user details: %v\n", err))
 		return err1
 	}
 
@@ -257,20 +248,20 @@ func (p passwordKeeper) Get(ctx context.Context, token, name, username string) (
 	_, err = p.tokenizer.Parse(token)
 
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("error while parsing the token: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("error while parsing the token: %v\n", err))
 		return Account{}, err1
 	}
 
 	dbAccount, err := p.passwords.Get(ctx, name, username)
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("error while retrieving user details: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("error while retrieving user details: %v\n", err))
 		return Account{}, err1
 	}
 
 	account, err = dbAccount.toAccount(p)
 
 	if err != nil {
-		err1 := errors.New(fmt.Sprintf("error while decoding account details: %v\n",err))
+		err1 := errors.New(fmt.Sprintf("error while decoding account details: %v\n", err))
 		return Account{}, err1
 	}
 
@@ -286,13 +277,13 @@ func (p passwordKeeper) List(ctx context.Context, token string, args map[string]
 	_, err = p.tokenizer.Parse(token)
 
 	if err != nil {
-		return nil, errors.Wrap(ErrPermissionDenied,err)
+		return nil, errors.Wrap(ErrPermissionDenied, err)
 	}
 
 	dbAccounts, err := p.passwords.List(ctx)
 
 	if err != nil {
-		return nil, errors.Wrap(ErrInternalError,err)
+		return nil, errors.Wrap(ErrInternalError, err)
 	}
 
 	for _, dba := range dbAccounts {
@@ -359,5 +350,3 @@ func (p passwordKeeper) AddAll(ctx context.Context, token string, accounts []Acc
 func (p passwordKeeper) DeleteAll(ctx context.Context, token string, args map[string]interface{}) (err error) {
 	panic("implement me")
 }
-
-

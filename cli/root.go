@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	jwt "github.com/hackaio/pk/jwt"
+	"github.com/hackaio/pk/jwt"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
@@ -54,14 +54,14 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.pk.yaml)")
-	rootCmd.PersistentFlags().BoolVarP(&verboseResp,"verbose", "v", false, "verbose command output")
-	rootCmd.PersistentFlags().StringVarP(&tokenStr,"token","t","","auth token")
-	rootCmd.PersistentFlags().StringP("name","n","","name of the account (e.g github)")
-	rootCmd.PersistentFlags().StringP("username","u","","username of the account (e.g alicebob)")
-	rootCmd.PersistentFlags().StringP("email","e","","email of the account")
+	rootCmd.PersistentFlags().BoolVarP(&verboseResp, "verbose", "v", false, "verbose command output")
+	rootCmd.PersistentFlags().StringVarP(&tokenStr, "token", "t", "", "auth token")
+	rootCmd.PersistentFlags().StringP("name", "n", "", "name of the account (e.g github)")
+	rootCmd.PersistentFlags().StringP("username", "u", "", "username of the account (e.g alicebob)")
+	rootCmd.PersistentFlags().StringP("email", "e", "", "email of the account")
 	//rootCmd.PersistentFlags().StringP("password","p","","the account password")
 
-	pgDatabase,err := pg.Connect()
+	pgDatabase, err := pg.Connect()
 	if err != nil {
 		panic(err)
 	}
@@ -73,19 +73,18 @@ func init() {
 	logMiddleware := pk.LoggingMiddleware(logger)*/
 
 	homeDir, err := homedir.Dir()
-	es,err := rsa.NewEncoderSigner(homeDir)
+	es, err := rsa.NewEncoderSigner(homeDir)
 	if err != nil {
 		panic(err)
 	}
 
+	keeper := pk.NewPasswordKeeper(hasher, store, tokenizer, es)
 
-	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es)
-
-	logg := log.New(os.Stdout,"pk :: ",1)
+	logg := log.New(os.Stdout, "pk :: ", 1)
 
 	mdw := pk.LoggingMiddleware(logg)
 
-	keeper = pk.AddMiddlewares(keeper,[]pk.Middleware{mdw})
+	keeper = pk.AddMiddlewares(keeper, []pk.Middleware{mdw})
 
 	comm := commander{keeper: keeper}
 
@@ -93,6 +92,7 @@ func init() {
 
 	rootCmd.AddCommand(
 		commands.Init,
+		commands.Register,
 		commands.Update,
 		commands.Delete,
 		commands.Get,
@@ -100,7 +100,7 @@ func init() {
 		commands.List,
 		commands.DB,
 		commands.Add,
-		)
+	)
 
 }
 

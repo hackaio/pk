@@ -29,14 +29,14 @@ var (
 	_ cli.BulkWriter = (*writer)(nil)
 )
 
-type reader struct {}
+type reader struct{}
 
 func NewReader() cli.BulkReader {
 	return &reader{}
 }
 
 func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
-	csvFile,err := os.Open(fileName)
+	csvFile, err := os.Open(fileName)
 	reader := csv.NewReader(bufio.NewReader(csvFile))
 
 	for {
@@ -54,14 +54,14 @@ func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, e
 			Password: line[3],
 		}
 
-		res = append(res,acc)
+		res = append(res, acc)
 
 	}
 
-	return res,err
+	return res, err
 }
 
-type writer struct {}
+type writer struct{}
 
 func NewWriter() cli.BulkWriter {
 	return &writer{}
@@ -70,7 +70,7 @@ func NewWriter() cli.BulkWriter {
 func (w *writer) Write(ctx context.Context, request cli.FileWriterReq) error {
 
 	fileName := request.FileName
-	fileNameExt := fmt.Sprintf("%v.csv",fileName)
+	fileNameExt := fmt.Sprintf("%v.csv", fileName)
 	file, err := os.Create(fileNameExt)
 	if err != nil {
 		return err
@@ -82,7 +82,7 @@ func (w *writer) Write(ctx context.Context, request cli.FileWriterReq) error {
 
 	as := request.Accounts
 
-	for _, acc := range as{
+	for _, acc := range as {
 		var record []string
 
 		record = []string{acc.Name, acc.UserName, acc.Email, acc.Password, acc.Created}
@@ -94,6 +94,3 @@ func (w *writer) Write(ctx context.Context, request cli.FileWriterReq) error {
 
 	return err
 }
-
-
-

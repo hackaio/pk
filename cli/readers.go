@@ -19,6 +19,5 @@ import (
 )
 
 type BulkReader interface {
-	Read(ctx context.Context, fileName string)(res []pk.Account,err error)
+	Read(ctx context.Context, fileName string) (res []pk.Account, err error)
 }
-

@@ -22,7 +22,7 @@ package stmt
 const (
 	ADD_OWNER = "INSERT INTO masters (name, username,email,password, created) VALUES ($1, $2, $3, $4, $5);"
 	GET_OWNER = "SELECT * FROM masters WHERE name = $1 AND username = $2;"
-	ADD = "INSERT INTO accounts (name, username,email,hash,encoded,digest,signature,created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);"
-	GET = "SELECT * FROM accounts WHERE name = $1 AND username = $2;"
-	LIST = "SELECT * FROM accounts;"
+	ADD       = "INSERT INTO accounts (name, username,email,hash,encoded,digest,signature,created) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);"
+	GET       = "SELECT * FROM accounts WHERE name = $1 AND username = $2;"
+	LIST      = "SELECT * FROM accounts;"
 )

@@ -43,7 +43,7 @@ func logUsage(u string) {
 }
 
 func logMessage(key, msg string) {
-	fmt.Printf(color.YellowString("\n%s: %s\n\n"),key, msg)
+	fmt.Printf(color.YellowString("\n%s: %s\n\n"), key, msg)
 }
 
 func logError(err error) {
@@ -62,4 +62,3 @@ func logCreated(e string) {
 	fmt.Printf(color.BlueString("\ncreated: %s\n\n"), e)
 
 }
-

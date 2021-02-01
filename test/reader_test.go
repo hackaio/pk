@@ -29,14 +29,12 @@ func TestJSONReader(t *testing.T) {
 		wantErr  bool
 	}
 
-
-
 	tests = append(tests, struct {
 		name     string
 		filename string
 		want     interface{}
 		wantErr  bool
-	}{name: "test number of accounts", filename: "account2.json", want:13 , wantErr: false})
+	}{name: "test number of accounts", filename: "account2.json", want: 13, wantErr: false})
 
 	for index, tt := range tests {
 
@@ -45,7 +43,7 @@ func TestJSONReader(t *testing.T) {
 			t.Run(tt.name, func(t *testing.T) {
 				c := pk.JsonReaderWriter()
 				gotRes, err := c.Read(context.Background(), tt.filename)
-				fmt.Printf("accounts: %v\n",gotRes)
+				fmt.Printf("accounts: %v\n", gotRes)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("Read() error = %v, wantErr %v", err, tt.wantErr)
 					return

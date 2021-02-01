@@ -22,18 +22,17 @@ import (
 func TestIssueToken(t *testing.T) {
 	to := NewTokenizer("pk-jwt-tokenizer")
 	token := pk.NewToken("piusalfred")
-	tStr,err := to.Issue(token)
+	tStr, err := to.Issue(token)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("token : %v\n",tStr)
+	fmt.Printf("token : %v\n", tStr)
 
 	tokenRecovered, err := to.Parse(tStr)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("id : %v issuedAt: %v",tokenRecovered.ID,tokenRecovered.IssuedAt)
+	fmt.Printf("id : %v issuedAt: %v", tokenRecovered.ID, tokenRecovered.IssuedAt)
 }
-

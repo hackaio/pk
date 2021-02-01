@@ -27,7 +27,7 @@ var (
 	_ cli2.BulkWriter = (*writer)(nil)
 )
 
-type reader struct {}
+type reader struct{}
 
 func NewReader() cli2.BulkReader {
 	return &reader{}
@@ -51,14 +51,14 @@ func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, e
 	// jsonFile's content into 'accounts' which we defined above
 	err = json.Unmarshal(byteValue, &res)
 
-	if err != nil{
+	if err != nil {
 		return res, err
 	}
 
-	return res,err
+	return res, err
 }
 
-type writer struct {}
+type writer struct{}
 
 func NewWriter() cli2.BulkWriter {
 	return &writer{}
@@ -67,4 +67,3 @@ func NewWriter() cli2.BulkWriter {
 func (w *writer) Write(ctx context.Context, request cli2.FileWriterReq) error {
 	panic("implement me")
 }
-
