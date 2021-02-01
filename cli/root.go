@@ -16,6 +16,9 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/cli/csv"
+	"github.com/hackaio/pk/cli/json"
+	"github.com/hackaio/pk/cli/keyring"
 	"github.com/hackaio/pk/pg"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
@@ -86,7 +89,17 @@ func init() {
 
 	keeper = pk.AddMiddlewares(keeper, []pk.Middleware{mdw})
 
-	comm := commander{keeper: keeper}
+	credentials := keyring.New()
+
+	csvReader:= csv.NewReader()
+
+	csvWriter := csv.NewWriter()
+
+	jsonReader:= json.NewReader()
+
+	jsonWriter := json.NewWriter()
+
+	comm := NewCommandsRunner(keeper,credentials,csvReader,csvWriter,jsonReader,jsonWriter)
 
 	commands := MakeAllCommands(comm)
 

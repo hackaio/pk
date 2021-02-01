@@ -72,7 +72,7 @@ type Commands struct {
 	List     *cobra.Command
 }
 
-func MakeAllCommands(comm commander) Commands {
+func MakeAllCommands(comm commands.Runner) Commands {
 	return Commands{
 		Init:     makeInitCommand(comm),
 		Register: makeRegisterCommand(comm),
@@ -161,7 +161,9 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 
 		var password string
 
-		password, err = comm.credentials.Get(pk.AppName, username)
+		cs := comm.credentials
+
+		password, err = cs.Get(pk.AppName, username)
 
 		if err != nil || password == "" {
 
@@ -492,7 +494,7 @@ func (comm *commander) Run(command commands.Command) commands.RunFunc {
 	}
 }
 
-func makeInitCommand(comm commander) *cobra.Command {
+func makeInitCommand(comm commands.Runner) *cobra.Command {
 	var initCmd = &cobra.Command{
 		Use:     "init",
 		Short:   "set up pk",
@@ -506,7 +508,7 @@ func makeInitCommand(comm commander) *cobra.Command {
 	return initCmd
 }
 
-func makeRegisterCommand(comm commander) *cobra.Command {
+func makeRegisterCommand(comm commands.Runner) *cobra.Command {
 	var regCmd = &cobra.Command{
 		Use:     "register",
 		Short:   "set up pk",
@@ -518,7 +520,7 @@ func makeRegisterCommand(comm commander) *cobra.Command {
 	return regCmd
 }
 
-func makeLoginCommand(comm commander) *cobra.Command {
+func makeLoginCommand(comm commands.Runner) *cobra.Command {
 	// loginCmd represents the login command
 	var loginCmd = &cobra.Command{
 		Use:     "login",
@@ -532,7 +534,7 @@ func makeLoginCommand(comm commander) *cobra.Command {
 
 }
 
-func makeAddCommand(comm commander) *cobra.Command {
+func makeAddCommand(comm commands.Runner) *cobra.Command {
 	// addCmd represents the add command
 	var addCmd = &cobra.Command{
 		Use:     "add",
@@ -548,7 +550,7 @@ func makeAddCommand(comm commander) *cobra.Command {
 
 }
 
-func makeGetCommand(comm commander) *cobra.Command {
+func makeGetCommand(comm commands.Runner) *cobra.Command {
 	// getCmd represents the get command
 	var getCmd = &cobra.Command{
 		Use:     "get",
@@ -561,7 +563,7 @@ func makeGetCommand(comm commander) *cobra.Command {
 	return getCmd
 }
 
-func makeListCommand(comm commander) *cobra.Command {
+func makeListCommand(comm commands.Runner) *cobra.Command {
 	// listCmd represents the get command
 	var listCmd = &cobra.Command{
 		Use:     "list",
@@ -579,7 +581,7 @@ func makeListCommand(comm commander) *cobra.Command {
 	return listCmd
 }
 
-func makeDeleteCommand(comm commander) *cobra.Command {
+func makeDeleteCommand(comm commands.Runner) *cobra.Command {
 	// deleteCmd represents the get command
 	var deleteCmd = &cobra.Command{
 		Use:     "delete",
@@ -592,7 +594,7 @@ func makeDeleteCommand(comm commander) *cobra.Command {
 	return deleteCmd
 }
 
-func makeUpdateCommand(comm commander) *cobra.Command {
+func makeUpdateCommand(comm commands.Runner) *cobra.Command {
 	// updateCmd represents the get command
 	var updateCmd = &cobra.Command{
 		Use:     "update",
@@ -605,7 +607,7 @@ func makeUpdateCommand(comm commander) *cobra.Command {
 	return updateCmd
 }
 
-func makeDBCommand(comm commander) *cobra.Command {
+func makeDBCommand(comm commands.Runner) *cobra.Command {
 	// dbCmd represents the get command
 	var dbCmd = &cobra.Command{
 		Use:     "db",
