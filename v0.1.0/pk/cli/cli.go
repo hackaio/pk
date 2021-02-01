@@ -20,10 +20,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var _ commands.Runner = (*commander)(nil)
+
 
 type commander struct {
 	keeper      pk.PasswordKeeper
 	credentials oldpk.CredStore
+	reader      BulkReader
+	writer      BulkWriter
+}
+
+func NewCommander(keeper pk.PasswordKeeper, store oldpk.CredStore,
+	reader BulkReader, writer BulkWriter)commands.Runner  {
+	return &commander{
+		keeper:      keeper,
+		credentials: store,
+		reader:      reader,
+		writer:      writer,
+	}
 }
 
 func (c *commander) Run(command commands.Command) commands.RunFunc {
@@ -71,7 +85,7 @@ func (c *commander) runInitCommand() commands.RunFunc {
 }
 
 func (c *commander) runRegisterCommand() commands.RunFunc {
-	
+
 }
 
 func (c *commander) runDBCommand() commands.RunFunc {
@@ -102,7 +116,6 @@ func (c *commander) runAddCommand() commands.RunFunc {
 	
 }
 
-var _ commands.Runner = (*commander)(nil)
 
 //Commands a struct with all pk commands
 type Commands struct {
