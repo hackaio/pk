@@ -16,9 +16,9 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/bcrypt"
+	"github.com/hackaio/pk/cli/csv"
+	"github.com/hackaio/pk/cli/json"
 	"github.com/hackaio/pk/cli/keyring"
-	"github.com/hackaio/pk/cli/rw/csv"
-	"github.com/hackaio/pk/cli/rw/json"
 	"github.com/hackaio/pk/pg"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
@@ -91,15 +91,15 @@ func init() {
 
 	credentials := keyring.New()
 
-	csvReader:= csv.NewReader()
+	csvReader := csv.NewReader()
 
 	csvWriter := csv.NewWriter()
 
-	jsonReader:= json.NewReader()
+	jsonReader := json.NewReader()
 
 	jsonWriter := json.NewWriter()
 
-	comm := NewCommandsRunner(keeper,credentials,csvReader,csvWriter,jsonReader,jsonWriter)
+	comm := NewCommandsRunner(keeper, credentials, csvReader, csvWriter, jsonReader, jsonWriter)
 
 	commands := MakeAllCommands(comm)
 

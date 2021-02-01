@@ -1,4 +1,3 @@
-
 /*
  * Copyright © 2021 PIUS ALFRED me.pius1102@gmail.com
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,14 +14,15 @@
 package keyring
 
 import (
+	"github.com/hackaio/pk"
 	"github.com/zalando/go-keyring"
 )
 
 type cred struct{}
 
-var _ CredStore = (*cred)(nil)
+var _ pk.CredStore = (*cred)(nil)
 
-func New() CredStore {
+func New() pk.CredStore {
 	return &cred{}
 }
 

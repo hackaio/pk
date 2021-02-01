@@ -17,8 +17,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/hackaio/pk/cli/commands"
-	keyring2 "github.com/hackaio/pk/cli/keyring"
-	"github.com/hackaio/pk/cli/rw"
 	"os"
 	"path/filepath"
 
@@ -39,18 +37,18 @@ var (
 
 type commander struct {
 	keeper      pk.PasswordKeeper
-	credentials keyring2.CredStore
-	csvReader   rw.BulkReader
-	csvWriter   rw.BulkWriter
-	jsonReader  rw.BulkReader
-	jsonWriter  rw.BulkWriter
+	credentials pk.CredStore
+	csvReader   pk.BulkReader
+	csvWriter   pk.BulkWriter
+	jsonReader  pk.BulkReader
+	jsonWriter  pk.BulkWriter
 }
 
 var _ commands.Runner = (*commander)(nil)
 
-func NewCommandsRunner(keeper pk.PasswordKeeper, store keyring2.CredStore,
-	csvReader rw.BulkReader, csvWriter rw.BulkWriter, jsonReader rw.BulkReader,
-	jsonWriter rw.BulkWriter) commands.Runner {
+func NewCommandsRunner(keeper pk.PasswordKeeper, store pk.CredStore,
+	csvReader pk.BulkReader, csvWriter pk.BulkWriter, jsonReader pk.BulkReader,
+	jsonWriter pk.BulkWriter) commands.Runner {
 	return &commander{
 		keeper:      keeper,
 		credentials: store,
@@ -422,7 +420,7 @@ func (comm *commander) runListCommand() commands.RunFunc {
 				dir = path
 			}
 
-			req := rw.FileWriterReq{
+			req := pk.FileWriterReq{
 				Accounts: accounts[:limit],
 				FileName: out,
 				FileExt:  format,

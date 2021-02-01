@@ -11,20 +11,12 @@
  * limitations under the License.
  */
 
-package rw
+package pk
 
 import (
 	"context"
-	"github.com/hackaio/pk"
 )
 
-type FileWriterReq struct {
-	Accounts []pk.Account
-	FileName string
-	FileExt  string
-	FileDir  string
-}
-
-type BulkWriter interface {
-	Write(ctx context.Context, request FileWriterReq) error
+type BulkReader interface {
+	Read(ctx context.Context, fileName string) (res []Account, err error)
 }

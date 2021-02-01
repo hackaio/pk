@@ -11,15 +11,19 @@
  * limitations under the License.
  */
 
-package keyring
+package pk
 
-//CredStore provides API to manage credentials securely
-//per OS specific mechanism
-type CredStore interface {
-	// Set password in keyring for user.
-	Set(service, user, password string) error
-	// Get password from keyring given service and user name.
-	Get(service, user string) (string, error)
-	// Delete secret from keyring.
-	Delete(service, user string) error
+import (
+	"context"
+)
+
+type FileWriterReq struct {
+	Accounts []Account
+	FileName string
+	FileExt  string
+	FileDir  string
+}
+
+type BulkWriter interface {
+	Write(ctx context.Context, request FileWriterReq) error
 }
