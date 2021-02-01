@@ -13,7 +13,7 @@
 
 package pk
 
-import "github.com/hackaio/pk/v0.1.0/pk"
+
 
 // RegisterRequest collects the request parameters for the Register method.
 type RegisterRequest struct {
@@ -52,7 +52,7 @@ func (r LoginResponse) Failed() error {
 // AddRequest collects the request parameters for the Add method.
 type AddRequest struct {
 	Token   string     `json:"token"`
-	Account pk.Account `json:"account"`
+	Account  Account `json:"account"`
 }
 
 // AddResponse collects the response parameters for the Add method.
@@ -74,7 +74,7 @@ type GetRequest struct {
 
 // GetResponse collects the response parameters for the Get method.
 type GetResponse struct {
-	Account pk.Account `json:"account"`
+	Account  Account `json:"account"`
 	Err     error      `json:"err"`
 }
 
@@ -108,7 +108,7 @@ type ListRequest struct {
 
 // ListResponse collects the response parameters for the List method.
 type ListResponse struct {
-	Accounts []pk.Account `json:"accounts"`
+	Accounts [] Account `json:"accounts"`
 	Err      error        `json:"err"`
 }
 
@@ -119,15 +119,15 @@ func (r ListResponse) Failed() error {
 
 // UpdateRequest collects the request parameters for the Update method.
 type UpdateRequest struct {
-	Token    pk.Account `json:"token"`
-	Name     pk.Account `json:"name"`
-	Username pk.Account `json:"username"`
-	Account  pk.Account `json:"account"`
+	Token     Account `json:"token"`
+	Name      Account `json:"name"`
+	Username  Account `json:"username"`
+	Account   Account `json:"account"`
 }
 
 // UpdateResponse collects the response parameters for the Update method.
 type UpdateResponse struct {
-	Acc pk.Account `json:"acc"`
+	Acc  Account `json:"acc"`
 	Err error      `json:"err"`
 }
 
@@ -139,7 +139,7 @@ func (r UpdateResponse) Failed() error {
 // AddAllRequest collects the request parameters for the AddAll method.
 type AddAllRequest struct {
 	Token    string       `json:"token"`
-	Accounts []pk.Account `json:"accounts"`
+	Accounts [] Account `json:"accounts"`
 }
 
 // AddAllResponse collects the response parameters for the AddAll method.
