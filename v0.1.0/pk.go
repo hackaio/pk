@@ -13,7 +13,12 @@
 
 package v0_1_0
 
-import "context"
+import (
+	"context"
+	"github.com/hackaio/pk"
+)
+
+var _ PasswordKeeper = (*passwordKeeper)(nil)
 
 //Account all details of account
 type Account struct {
@@ -36,8 +41,8 @@ type DBAccount struct {
 	Created   string `json:"created,omitempty"`
 }
 
-// PkService describes the service.
-type PkService interface {
+// PasswordKeeper describes the service.
+type PasswordKeeper interface {
 
 	//Register creates a new account. The function takes
 	//Username, Email, Password. Account name is "master"
@@ -84,4 +89,83 @@ type PkService interface {
 	//or you want to delete all accounts registered under a certain email address
 	DeleteAll(ctx context.Context, token string, args map[string]interface{}) (err error)
 }
+
+type passwordKeeper struct {
+	hasher      pk.Hasher
+	passwords   pk.PasswordStore
+	tokenizer   pk.Tokenizer
+	es          pk.EncoderSigner
+}
+
+func NewPasswordKeeper(
+	hasher pk.Hasher, store pk.PasswordStore,
+	tokenizer pk.Tokenizer, es pk.EncoderSigner) PasswordKeeper {
+	return &passwordKeeper{
+		hasher:      hasher,
+		passwords:   store,
+		tokenizer:   tokenizer,
+		es:          es,
+	}
+}
+
+func (p passwordKeeper) Register(ctx context.Context, username, email, password string) (err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) Login(ctx context.Context, username, password string) (token string, err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) Add(ctx context.Context, token string, account Account) (err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) Get(ctx context.Context, token, name, username string) (account Account, err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) Delete(ctx context.Context, token, name, username string) (err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) List(ctx context.Context, token string, args map[string]interface{}) (accounts []Account, err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) Update(ctx context.Context, token, name, username, account Account) (acc Account, err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) AddAll(ctx context.Context, token string, accounts []Account) (err error) {
+	panic("implement me")
+}
+
+func (p passwordKeeper) DeleteAll(ctx context.Context, token string, args map[string]interface{}) (err error) {
+	panic("implement me")
+}
+
+
+
+type Middleware func(keeper PasswordKeeper) PasswordKeeper
+
+func New( hasher pk.Hasher, store pk.PasswordStore, tokenizer pk.Tokenizer,
+	es pk.EncoderSigner, middlewares []Middleware) PasswordKeeper {
+
+	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
+
+	for _, middleware := range middlewares {
+		keeper = middleware(keeper)
+	}
+
+	return keeper
+}
+
+func AddMiddlewares(keeper PasswordKeeper, middlewares []Middleware) PasswordKeeper {
+	for _, middleware := range middlewares {
+		keeper = middleware(keeper)
+	}
+	return keeper
+}
+
+
 
