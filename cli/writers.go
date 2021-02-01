@@ -15,7 +15,7 @@ package cli
 
 import (
 	"context"
-	"github.com/hackaio/pk/v0.1.0/pk"
+	"github.com/hackaio/pk"
 )
 
 type FileWriterReq struct {

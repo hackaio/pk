@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/bcrypt"
-	"github.com/hackaio/pk/credstore"
 	"github.com/hackaio/pk/pg"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
@@ -79,15 +78,14 @@ func init() {
 		panic(err)
 	}
 
-	cs := credstore.New()
 
-	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es,cs)
+	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es)
 
 	logg := log.New(os.Stdout,"pk :: ",1)
 
 	mdw := pk.LoggingMiddleware(logg)
 
-	keeper = pk.WireInMiddlewares(keeper,[]pk.Middleware{mdw})
+	keeper = pk.AddMiddlewares(keeper,[]pk.Middleware{mdw})
 
 	comm := commander{keeper: keeper}
 

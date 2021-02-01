@@ -15,8 +15,11 @@ package json
 
 import (
 	"context"
+	"encoding/json"
+	"github.com/hackaio/pk"
 	cli2 "github.com/hackaio/pk/cli"
-	"github.com/hackaio/pk/v0.1.0/pk"
+	"io/ioutil"
+	"os"
 )
 
 var (
@@ -31,7 +34,28 @@ func NewReader() cli2.BulkReader {
 }
 
 func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
-	panic("implement me")
+	// Open our jsonFile
+	jsonFile, err := os.Open(fileName)
+	// if we os.Open returns an error then handle it
+	if err != nil {
+		return res, err
+	}
+
+	// defer the closing of our jsonFile so that we can parse it later on
+	defer jsonFile.Close()
+
+	// read our opened jsonFile as a byte array.
+	byteValue, _ := ioutil.ReadAll(jsonFile)
+
+	// we unmarshal our byteArray which contains our
+	// jsonFile's content into 'accounts' which we defined above
+	err = json.Unmarshal(byteValue, &res)
+
+	if err != nil{
+		return res, err
+	}
+
+	return res,err
 }
 
 type writer struct {}

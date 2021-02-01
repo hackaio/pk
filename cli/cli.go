@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/hackaio/pk/cli/commands"
 	"os"
 	"path/filepath"
 
@@ -34,39 +35,37 @@ var (
 	debugMessage = "not yet implemented"
 )
 
-type UploadFormat string
-
-const (
-	JSON UploadFormat = "json"
-	CSV  UploadFormat = "csv"
-)
-
-func getUploadFormat(value string) (UploadFormat, error) {
-
-	if value == "csv" {
-		return CSV, nil
-	} else if value == "json" {
-		return JSON, nil
-	} else {
-		return "", errors.New("unknown upload format")
-	}
-}
 
 
-
-//RunFunc wraps the run func in cobra.Command
-type RunFunc func(cmd *cobra.Command, args []string)
 
 type commander struct {
 	keeper      pk.PasswordKeeper
 	credentials CredStore
-	reader      BulkReader
-	writer      BulkWriter
+	csvReader      BulkReader
+	csvWriter      BulkWriter
+	jsonReader     BulkReader
+	jsonWriter     BulkWriter
+}
+
+var _ commands.Runner = (*commander)(nil)
+
+func NewCommandsRunner(keeper pk.PasswordKeeper,store CredStore,
+	csvReader BulkReader, csvWriter BulkWriter,jsonReader BulkReader,
+	jsonWriter BulkWriter) commands.Runner {
+	return &commander{
+		keeper:      keeper,
+		credentials: store,
+		csvReader:   csvReader,
+		csvWriter:   csvWriter,
+		jsonReader:  jsonReader,
+		jsonWriter:  jsonWriter,
+	}
 }
 
 //Commands a struct with all pk commands
 type Commands struct {
 	Init   *cobra.Command
+	Register *cobra.Command
 	Login  *cobra.Command
 	Add    *cobra.Command
 	Get    *cobra.Command
@@ -76,14 +75,11 @@ type Commands struct {
 	List   *cobra.Command
 }
 
-//beforeAny is run before any command is executed
-func beforeAny() {
-
-}
 
 func MakeAllCommands(comm commander) Commands {
 	return Commands{
 		Init:   makeInitCommand(comm),
+		Register: makeRegisterCommand(comm),
 		Login:  makeLoginCommand(comm),
 		Add:    makeAddCommand(comm),
 		Get:    makeGetCommand(comm),
@@ -94,7 +90,9 @@ func MakeAllCommands(comm commander) Commands {
 	}
 }
 
-func (comm *commander) runInitCommand() RunFunc {
+
+
+func (comm *commander) runInitCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		email, err := cmd.Flags().GetString("email")
@@ -146,15 +144,11 @@ func (comm *commander) runInitCommand() RunFunc {
 			logError(err1)
 			os.Exit(1)
 		}
-		request := pk.RegisterRequest{
-			Username: username,
-			Email:    email,
-			Password: string(password),
-		}
-		errResponse := comm.keeper.Register(context.Background(), request)
 
-		if errResponse.Err != nil {
-			logError(errResponse.Err)
+		err = comm.keeper.Register(context.Background(),username,email,string(password))
+
+		if err != nil {
+			logError(err)
 			return
 		}
 
@@ -163,7 +157,7 @@ func (comm *commander) runInitCommand() RunFunc {
 	}
 }
 
-func (comm *commander) runLoginCommand() RunFunc {
+func (comm *commander) runLoginCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 
@@ -220,16 +214,14 @@ func (comm *commander) runLoginCommand() RunFunc {
 			}
 		}
 
-		request := pk.LoginRequest{
-			UserName: username,
-			Password: password,
-		}
-		response := comm.keeper.Login(context.Background(), request)
-		if response.Err != nil {
+
+		token, err := comm.keeper.Login(context.Background(), username,password)
+		if err != nil {
+			logError(err)
 			os.Exit(1)
 		}
 
-		err = comm.credentials.Set(pk.AppName, "token", response.Token)
+		err = comm.credentials.Set(pk.AppName, "token", token)
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
@@ -237,22 +229,21 @@ func (comm *commander) runLoginCommand() RunFunc {
 			os.Exit(1)
 		}
 
-		logMessage("token", response.Token)
+		logMessage("token", token)
 		return
 	}
 
 }
 
-func (comm *commander) runAddCommand() RunFunc {
+func (comm *commander) runAddCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 
-		cs := comm.keeper.CredStore()
 		username, err := cmd.Flags().GetString("username")
 		fileName, err := cmd.Flags().GetString("file")
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cs.Get(pk.AppName, "token")
+		token, err := comm.credentials.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -264,7 +255,7 @@ func (comm *commander) runAddCommand() RunFunc {
 		fileNameAvailable := len(fileName) > 4
 
 		var accounts []pk.Account
-		var br pk.BulkAddRequest
+
 
 		if fileNameAvailable && len(token) > 1 {
 
@@ -272,20 +263,16 @@ func (comm *commander) runAddCommand() RunFunc {
 			ext := filepath.Ext(fileName)
 			if ext == ".json" {
 
-				jr := pk.JsonReaderWriter()
-				accounts, err := jr.Read(ctx, fileName)
+				accounts, err := comm.jsonReader.Read(ctx, fileName)
 
 				if err != nil {
 					logError(err)
 					os.Exit(1)
 				}
 
-				br = pk.BulkAddRequest{
-					Token:    token,
-					Accounts: accounts,
-				}
 
-				err = comm.keeper.AddMany(ctx, br)
+
+				err = comm.keeper.AddAll(ctx,token,accounts)
 
 				if err != nil {
 					logError(err)
@@ -297,20 +284,16 @@ func (comm *commander) runAddCommand() RunFunc {
 
 			} else if ext == ".csv" {
 
-				cr := pk.CSVReaderWriter()
-				accounts, err = cr.Read(ctx, fileName)
+				accounts, err = comm.csvReader.Read(ctx, fileName)
 
 				if err != nil {
 					logError(err)
 					os.Exit(1)
 				}
 
-				br = pk.BulkAddRequest{
-					Token:    token,
-					Accounts: accounts,
-				}
 
-				err = comm.keeper.AddMany(ctx, br)
+
+				err = comm.keeper.AddAll(ctx, token,accounts)
 
 				if err != nil {
 					logError(err)
@@ -332,18 +315,18 @@ func (comm *commander) runAddCommand() RunFunc {
 			os.Exit(1)
 		} else {
 
-			request := pk.AddRequest{
-				Token:    token,
+
+			account := pk.Account{
 				Name:     name,
 				UserName: username,
 				Email:    email,
 				Password: password,
 			}
 
-			res := comm.keeper.Add(context.Background(), request)
+			err = comm.keeper.Add(context.Background(),token,account)
 
-			if res.Err != nil {
-				logError(res.Err)
+			if err != nil {
+				logError(err)
 				return
 			}
 
@@ -353,13 +336,12 @@ func (comm *commander) runAddCommand() RunFunc {
 	}
 }
 
-func (comm *commander) runGetCommand() RunFunc {
+func (comm *commander) runGetCommand() commands.RunFunc {
 
-	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		name, err := cmd.Flags().GetString("name")
-		token, err := cs.Get(pk.AppName, "token")
+		token, err := comm.credentials.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -370,16 +352,12 @@ func (comm *commander) runGetCommand() RunFunc {
 			logUsage(cmd.Example)
 			os.Exit(1)
 		}
-		request := pk.GetRequest{
-			Token:    token,
-			Name:     name,
-			UserName: username,
-		}
 
-		response := comm.keeper.Get(context.Background(), request)
+		response,err := comm.keeper.Get(context.Background(),token,name,username)
 
-		if response.Err != nil {
-			logError(response.Err)
+		if err != nil {
+			logError(err)
+
 		}
 
 		logMessage("username", response.Email)
@@ -389,29 +367,27 @@ func (comm *commander) runGetCommand() RunFunc {
 
 }
 
-func (comm *commander) runDeleteCommand() RunFunc {
+func (comm *commander) runDeleteCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) runListCommand() RunFunc {
+func (comm *commander) runListCommand() commands.RunFunc {
 
-	cs := comm.keeper.CredStore()
 	return func(cmd *cobra.Command, args []string) {
 		limit, err := cmd.Flags().GetInt("limit")
-		token, err := cs.Get(pk.AppName, "token")
+		token, err := comm.credentials.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
 			os.Exit(1)
 		}
 
-		req := pk.ListRequest{Token: token}
+		var argx  map[string]interface{}
+		accounts,err := comm.keeper.List(context.Background(), token,argx)
 
-		response := comm.keeper.List(context.Background(), req)
-
-		if response.Err != nil {
+		if err != nil {
 			logError(err)
 			os.Exit(1)
 		}
@@ -428,11 +404,11 @@ func (comm *commander) runListCommand() RunFunc {
 			}*/
 
 		if limit == 0 {
-			limit = len(response.Accounts)
+			limit = len(accounts)
 		}
 
 		if out == "" && format == "" && dir == "" {
-			logJSON(response.Accounts[:limit])
+			logJSON(accounts[:limit])
 		} else {
 			if out == "" {
 				out = "accounts"
@@ -458,23 +434,23 @@ func (comm *commander) runListCommand() RunFunc {
 				dir = path
 			}
 
-			req := pk.FileWriterReq{
-				Accounts: response.Accounts[:limit],
+			req := FileWriterReq{
+				Accounts: accounts[:limit],
 				FileName: out,
 				FileExt:  format,
 				FileDir:  dir,
 			}
 
 			if format == "csv" {
-				csvWriter := pk.CSVReaderWriter()
-				err := csvWriter.Write(context.Background(), req)
+
+				err := comm.csvWriter.Write(context.Background(), req)
 				if err != nil {
 					logError(err)
 					os.Exit(1)
 				}
 			} else if format == "json" {
-				jsonWriter := pk.JsonReaderWriter()
-				err := jsonWriter.Write(context.Background(), req)
+
+				err := comm.jsonWriter.Write(context.Background(), req)
 				if err != nil {
 					logError(err)
 					os.Exit(1)
@@ -485,44 +461,44 @@ func (comm *commander) runListCommand() RunFunc {
 	}
 }
 
-func (comm *commander) runUpdateCommand() RunFunc {
+func (comm *commander) runUpdateCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) runDBCommand() RunFunc {
+func (comm *commander) runDBCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		logMessage("error", debugMessage)
 	}
 }
 
-func (comm *commander) RunCommand(command Command) RunFunc {
+func (comm *commander) Run(command commands.Command) commands.RunFunc {
 
 	switch command {
 
-	case Init:
+	case commands.Init:
 		return comm.runInitCommand()
 
-	case Login:
+	case commands.Login:
 		return comm.runLoginCommand()
 
-	case Add:
+	case commands.Add:
 		return comm.runAddCommand()
 
-	case Get:
+	case commands.Get:
 		return comm.runGetCommand()
 
-	case Delete:
+	case commands.Delete:
 		return comm.runDeleteCommand()
 
-	case List:
+	case commands.List:
 		return comm.runListCommand()
 
-	case Update:
+	case commands.Update:
 		return comm.runUpdateCommand()
 
-	case DB:
+	case commands.DB:
 		return comm.runDBCommand()
 
 	default:
@@ -538,12 +514,26 @@ func makeInitCommand(comm commander) *cobra.Command {
 		Short:   "set up pk",
 		Long:    `init should be run firstly before anything after installation`,
 		Example: "pk init -u <username> -e <email>",
-		Run:     comm.RunCommand(Init),
+		Run:     comm.Run(commands.Init),
 	}
 
 	initCmd.Flags().BoolP("credstore", "c", true, "store credentials")
 
 	return initCmd
+}
+
+func makeRegisterCommand(comm commander) *cobra.Command {
+	var regCmd = &cobra.Command{
+		Use:     "register",
+		Short:   "set up pk",
+		Long:    `init should be run firstly before anything after installation`,
+		Example: "pk init -u <username> -e <email>",
+		Run:     comm.Run(commands.Register),
+	}
+
+
+
+	return regCmd
 }
 
 func makeLoginCommand(comm commander) *cobra.Command {
@@ -553,7 +543,7 @@ func makeLoginCommand(comm commander) *cobra.Command {
 		Short:   "generate auth token",
 		Example: "pk login -u <username>",
 		Long:    `generates a jwt token string after the user has supplied username along side master password`,
-		Run:     comm.RunCommand(Login),
+		Run:     comm.Run(commands.Login),
 	}
 
 	return loginCmd
@@ -567,7 +557,7 @@ func makeAddCommand(comm commander) *cobra.Command {
 		Short:   "add new details to db",
 		Example: "pk add --file accounts.json",
 		Long:    `provide name,username,email and password to add new acc`,
-		Run:     comm.RunCommand(Add),
+		Run:     comm.Run(commands.Add),
 	}
 
 	addCmd.PersistentFlags().StringP("file", "f", "", "json or csv accounts file")
@@ -583,7 +573,7 @@ func makeGetCommand(comm commander) *cobra.Command {
 		Short:   "get account",
 		Example: "pk get -n <name> -u <username>",
 		Long:    `return the details of a single account with specified username`,
-		Run:     comm.RunCommand(Get),
+		Run:     comm.Run(commands.Get),
 	}
 
 	return getCmd
@@ -596,7 +586,7 @@ func makeListCommand(comm commander) *cobra.Command {
 		Short:   "retrieve all accounts",
 		Example: "pk list",
 		Long:    `list all accounts details`,
-		Run:     comm.RunCommand(List),
+		Run:     comm.Run(commands.List),
 	}
 
 	listCmd.PersistentFlags().IntP("limit", "l", 0, "limits of accounts to list")
@@ -614,7 +604,7 @@ func makeDeleteCommand(comm commander) *cobra.Command {
 		Short:   "delete account",
 		Example: "pk delete -n <name> -u <username>",
 		Long:    `delete account details by specifying username and name`,
-		Run:     comm.RunCommand(Delete),
+		Run:     comm.Run(commands.Delete),
 	}
 
 	return deleteCmd
@@ -627,7 +617,7 @@ func makeUpdateCommand(comm commander) *cobra.Command {
 		Short:   "update account",
 		Example: "pk update -n <name> -u <username>",
 		Long:    `update account details by specifying username and name`,
-		Run:     comm.RunCommand(Update),
+		Run:     comm.Run(commands.Update),
 	}
 
 	return updateCmd
@@ -640,7 +630,7 @@ func makeDBCommand(comm commander) *cobra.Command {
 		Short:   "db management command",
 		Example: "pk db",
 		Long:    `manages pk database`,
-		Run:     comm.RunCommand(DB),
+		Run:     comm.Run(commands.DB),
 	}
 
 	return dbCmd

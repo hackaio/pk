@@ -14,34 +14,85 @@
 package csv
 
 import (
+	"bufio"
 	"context"
-	cli2 "github.com/hackaio/pk/cli"
-	"github.com/hackaio/pk/v0.1.0/pk"
+	"encoding/csv"
+	"fmt"
+	"github.com/hackaio/pk"
+	"github.com/hackaio/pk/cli"
+	"io"
+	"os"
 )
 
 var (
-	_ cli2.BulkReader = (*reader)(nil)
-	_ cli2.BulkWriter = (*writer)(nil)
+	_ cli.BulkReader = (*reader)(nil)
+	_ cli.BulkWriter = (*writer)(nil)
 )
 
 type reader struct {}
 
-func NewReader() cli2.BulkReader {
+func NewReader() cli.BulkReader {
 	return &reader{}
 }
 
 func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
-	panic("implement me")
+	csvFile,err := os.Open(fileName)
+	reader := csv.NewReader(bufio.NewReader(csvFile))
+
+	for {
+		line, err := reader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			err = nil
+		}
+
+		acc := pk.Account{
+			Name:     line[0],
+			UserName: line[1],
+			Email:    line[2],
+			Password: line[3],
+		}
+
+		res = append(res,acc)
+
+	}
+
+	return res,err
 }
 
 type writer struct {}
 
-func NewWriter() cli2.BulkWriter {
+func NewWriter() cli.BulkWriter {
 	return &writer{}
 }
 
-func (w *writer) Write(ctx context.Context, request cli2.FileWriterReq) error {
-	panic("implement me")
+func (w *writer) Write(ctx context.Context, request cli.FileWriterReq) error {
+
+	fileName := request.FileName
+	fileNameExt := fmt.Sprintf("%v.csv",fileName)
+	file, err := os.Create(fileNameExt)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	as := request.Accounts
+
+	for _, acc := range as{
+		var record []string
+
+		record = []string{acc.Name, acc.UserName, acc.Email, acc.Password, acc.Created}
+		err = writer.Write(record)
+		if err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 
