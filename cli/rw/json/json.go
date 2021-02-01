@@ -17,19 +17,19 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/hackaio/pk"
-	cli2 "github.com/hackaio/pk/cli"
+	"github.com/hackaio/pk/cli/rw"
 	"io/ioutil"
 	"os"
 )
 
 var (
-	_ cli2.BulkReader = (*reader)(nil)
-	_ cli2.BulkWriter = (*writer)(nil)
+	_ rw.BulkReader = (*reader)(nil)
+	_ rw.BulkWriter = (*writer)(nil)
 )
 
 type reader struct{}
 
-func NewReader() cli2.BulkReader {
+func NewReader() rw.BulkReader {
 	return &reader{}
 }
 
@@ -60,10 +60,10 @@ func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, e
 
 type writer struct{}
 
-func NewWriter() cli2.BulkWriter {
+func NewWriter() rw.BulkWriter {
 	return &writer{}
 }
 
-func (w *writer) Write(ctx context.Context, request cli2.FileWriterReq) error {
+func (w *writer) Write(ctx context.Context, request rw.FileWriterReq) error {
 	panic("implement me")
 }

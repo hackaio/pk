@@ -15,15 +15,14 @@
 package keyring
 
 import (
-	"github.com/hackaio/pk/cli"
 	"github.com/zalando/go-keyring"
 )
 
 type cred struct{}
 
-var _ cli.CredStore = (*cred)(nil)
+var _ CredStore = (*cred)(nil)
 
-func New() cli.CredStore {
+func New() CredStore {
 	return &cred{}
 }
 

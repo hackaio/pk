@@ -11,20 +11,15 @@
  * limitations under the License.
  */
 
-package cli
+package keyring
 
-import (
-	"context"
-	"github.com/hackaio/pk"
-)
-
-type FileWriterReq struct {
-	Accounts []pk.Account
-	FileName string
-	FileExt  string
-	FileDir  string
-}
-
-type BulkWriter interface {
-	Write(ctx context.Context, request FileWriterReq) error
+//CredStore provides API to manage credentials securely
+//per OS specific mechanism
+type CredStore interface {
+	// Set password in keyring for user.
+	Set(service, user, password string) error
+	// Get password from keyring given service and user name.
+	Get(service, user string) (string, error)
+	// Delete secret from keyring.
+	Delete(service, user string) error
 }

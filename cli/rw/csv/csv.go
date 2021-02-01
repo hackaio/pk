@@ -19,19 +19,19 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/hackaio/pk"
-	"github.com/hackaio/pk/cli"
+	"github.com/hackaio/pk/cli/rw"
 	"io"
 	"os"
 )
 
 var (
-	_ cli.BulkReader = (*reader)(nil)
-	_ cli.BulkWriter = (*writer)(nil)
+	_ rw.BulkReader = (*reader)(nil)
+	_ rw.BulkWriter = (*writer)(nil)
 )
 
 type reader struct{}
 
-func NewReader() cli.BulkReader {
+func NewReader() rw.BulkReader {
 	return &reader{}
 }
 
@@ -63,11 +63,11 @@ func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, e
 
 type writer struct{}
 
-func NewWriter() cli.BulkWriter {
+func NewWriter() rw.BulkWriter {
 	return &writer{}
 }
 
-func (w *writer) Write(ctx context.Context, request cli.FileWriterReq) error {
+func (w *writer) Write(ctx context.Context, request rw.FileWriterReq) error {
 
 	fileName := request.FileName
 	fileNameExt := fmt.Sprintf("%v.csv", fileName)
