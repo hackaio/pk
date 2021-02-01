@@ -83,7 +83,7 @@ func init() {
 
 	keeper := pk.NewPasswordKeeper(hasher,store,tokenizer,es,cs)
 
-	logg := log.New(os.Stdout,"pk ::",1)
+	logg := log.New(os.Stdout,"pk :: ",1)
 
 	mdw := pk.LoggingMiddleware(logg)
 

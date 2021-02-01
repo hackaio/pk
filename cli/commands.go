@@ -16,13 +16,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/hackaio/pk"
 	"github.com/hackaio/pk/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/zalando/go-keyring"
 	"golang.org/x/crypto/ssh/terminal"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -37,20 +38,19 @@ type UploadFormat string
 
 const (
 	JSON UploadFormat = "json"
-	CSV UploadFormat = "csv"
+	CSV  UploadFormat = "csv"
 )
 
-func getUploadFormat(value string)(UploadFormat,error) {
+func getUploadFormat(value string) (UploadFormat, error) {
 
-	if value == "csv"{
-		return CSV,nil
-	}else if value == "json" {
-		return JSON,nil
-	}else{
+	if value == "csv" {
+		return CSV, nil
+	} else if value == "json" {
+		return JSON, nil
+	} else {
 		return "", errors.New("unknown upload format")
 	}
 }
-
 
 type Command int
 
@@ -65,12 +65,15 @@ const (
 	DB
 )
 
+//CommandFunc wraps the run func in cobra.Command
 type CommandFunc func(cmd *cobra.Command, args []string)
 
 type commander struct {
-	keeper pk.PasswordKeeper
+	keeper    pk.PasswordKeeper
+	credstore pk.CredStore
 }
 
+//Commands a struct with all pk commands
 type Commands struct {
 	Init   *cobra.Command
 	Login  *cobra.Command
@@ -212,7 +215,6 @@ func (comm *commander) runLoginCommand() CommandFunc {
 
 				password = string(passwordBytes)
 
-
 				//fixme
 				_ = cs.Set(pk.AppName, username, password)
 
@@ -323,13 +325,11 @@ func (comm *commander) runAddCommand() CommandFunc {
 				logOK()
 				return
 
-
 			} else {
 				err1 := errors.New("parse json or csv files only")
 				logError(err1)
 				os.Exit(1)
 			}
-
 
 		} else if username == "" || email == "" || password == "" ||
 			name == "" || token == "" {
@@ -414,7 +414,7 @@ func (comm *commander) runListCommand() CommandFunc {
 
 		req := pk.ListRequest{Token: token}
 
-		response := comm.keeper.List(context.Background(),req)
+		response := comm.keeper.List(context.Background(), req)
 
 		if response.Err != nil {
 			logError(err)
@@ -425,12 +425,12 @@ func (comm *commander) runListCommand() CommandFunc {
 		format, err := cmd.Flags().GetString("format")
 		dir, err := cmd.Flags().GetString("dir")
 
-	/*	fileFormat, err := getUploadFormat(format)
+		/*	fileFormat, err := getUploadFormat(format)
 
-		if err != nil {
-			logError(err)
-			os.Exit(1)
-		}*/
+			if err != nil {
+				logError(err)
+				os.Exit(1)
+			}*/
 
 		if limit == 0 {
 			limit = len(response.Accounts)
@@ -438,23 +438,23 @@ func (comm *commander) runListCommand() CommandFunc {
 
 		if out == "" && format == "" && dir == "" {
 			logJSON(response.Accounts[:limit])
-		}else {
+		} else {
 			if out == "" {
 				out = "accounts"
 			}
 
 			if format == "" {
-				 format = "json"
+				format = "json"
 			}
 
-			if !(format == "json" || format == "csv"){
+			if !(format == "json" || format == "csv") {
 				errFormat := errors.New("invalid file format")
 				logError(errFormat)
 				os.Exit(1)
 
 			}
 
-			if dir == ""{
+			if dir == "" {
 				path, err := os.Getwd()
 				if err != nil {
 					logError(err)
@@ -470,24 +470,22 @@ func (comm *commander) runListCommand() CommandFunc {
 				FileDir:  dir,
 			}
 
-			if format == "csv"{
+			if format == "csv" {
 				csvWriter := pk.CSVReaderWriter()
-				err := csvWriter.Write(context.Background(),req)
+				err := csvWriter.Write(context.Background(), req)
 				if err != nil {
 					logError(err)
 					os.Exit(1)
 				}
-			}else if format == "json"{
+			} else if format == "json" {
 				jsonWriter := pk.JsonReaderWriter()
-				err := jsonWriter.Write(context.Background(),req)
+				err := jsonWriter.Write(context.Background(), req)
 				if err != nil {
 					logError(err)
 					os.Exit(1)
 				}
 			}
 		}
-
-
 
 	}
 }
@@ -577,7 +575,7 @@ func makeAddCommand(comm commander) *cobra.Command {
 		Run:     comm.RunCommand(Add),
 	}
 
-	addCmd.PersistentFlags().StringP("file","f","","json or csv accounts file")
+	addCmd.PersistentFlags().StringP("file", "f", "", "json or csv accounts file")
 
 	return addCmd
 
@@ -606,11 +604,10 @@ func makeListCommand(comm commander) *cobra.Command {
 		Run:     comm.RunCommand(List),
 	}
 
-	listCmd.PersistentFlags().IntP("limit","l",0,"limits of accounts to list")
-	listCmd.PersistentFlags().StringP("out","o","","output filename")
-	listCmd.PersistentFlags().StringP("format","m","","output file format")
-	listCmd.PersistentFlags().StringP("dir","d","","output directory")
-
+	listCmd.PersistentFlags().IntP("limit", "l", 0, "limits of accounts to list")
+	listCmd.PersistentFlags().StringP("out", "o", "", "output filename")
+	listCmd.PersistentFlags().StringP("format", "m", "", "output file format")
+	listCmd.PersistentFlags().StringP("dir", "d", "", "output directory")
 
 	return listCmd
 }
