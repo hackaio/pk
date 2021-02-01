@@ -16,8 +16,9 @@ package pk
 import (
 	"context"
 	"fmt"
-	"github.com/hackaio/pk/pkg/errors"
 	"time"
+
+	"github.com/hackaio/pk/pkg/errors"
 )
 
 const (
@@ -36,7 +37,6 @@ var (
 )
 
 type RequestDecoder interface {
-
 }
 
 type ResponseEncoder interface {
@@ -71,7 +71,7 @@ type EncoderSigner interface {
 }
 
 type BulkAddRequest struct {
-	Token string `json:"token"`
+	Token    string    `json:"token"`
 	Accounts []Account `json:"accounts"`
 }
 
@@ -127,7 +127,7 @@ type GetRequest struct {
 type GetResponse struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Err error `json:"err"`
+	Err      error  `json:"err"`
 }
 
 type ListRequest struct {
@@ -150,19 +150,19 @@ type UpdateRequest struct {
 //ErrResponse is a generic error response for function
 //returning error as the only return value
 type ErrResponse struct {
-	Err error `json:"err"`
+	Err error  `json:"err"`
 	Msg string `json:"msg"`
 }
 
-func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount,error) {
+func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount, error) {
 
-	hash,err := keeper.hasher.Hash(a.Password)
+	hash, err := keeper.hasher.Hash(a.Password)
 
 	if err != nil {
 		return DBAccount{}, err
 	}
 
-	encodedBytes,err := keeper.es.Encode(a.Password)
+	encodedBytes, err := keeper.es.Encode(a.Password)
 
 	if err != nil {
 		return DBAccount{}, err
@@ -183,12 +183,12 @@ func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount,error) {
 		Digest:    digestB,
 		Signature: signB,
 		Created:   a.Created,
-	},nil
+	}, nil
 }
 
-func (a DBAccount) toAccount(keeper passwordKeeper) (Account,error) {
+func (a DBAccount) toAccount(keeper passwordKeeper) (Account, error) {
 
-	pass,err:= keeper.es.Decode(a.Encoded)
+	pass, err := keeper.es.Decode(a.Encoded)
 
 	if err != nil {
 		return Account{}, err
@@ -199,7 +199,7 @@ func (a DBAccount) toAccount(keeper passwordKeeper) (Account,error) {
 		Email:    a.Email,
 		Password: pass,
 		Created:  a.Created,
-	},nil
+	}, nil
 }
 
 type PasswordKeeper interface {
@@ -234,7 +234,7 @@ type PasswordKeeper interface {
 
 	//List returns all the accounts registered under the master
 	//accounts
-	List(ctx context.Context,request ListRequest) (list ListResponse)
+	List(ctx context.Context, request ListRequest) (list ListResponse)
 
 	//Updates the details of the account
 	Update(ctx context.Context, request UpdateRequest) (response ErrResponse)
@@ -242,7 +242,7 @@ type PasswordKeeper interface {
 	CredStore() CredStore
 
 	//AddMany
-	AddMany(ctx context.Context, req BulkAddRequest)(err error)
+	AddMany(ctx context.Context, req BulkAddRequest) (err error)
 }
 
 type PasswordStore interface {
@@ -257,14 +257,12 @@ type PasswordStore interface {
 }
 
 type passwordKeeper struct {
-	hasher    Hasher
-	passwords PasswordStore
-	tokenizer Tokenizer
-	es        EncoderSigner
+	hasher      Hasher
+	passwords   PasswordStore
+	tokenizer   Tokenizer
+	es          EncoderSigner
 	credentials CredStore
 }
-
-
 
 func (p passwordKeeper) CredStore() CredStore {
 	return p.credentials
@@ -276,10 +274,10 @@ func NewPasswordKeeper(
 	hasher Hasher, store PasswordStore,
 	tokenizer Tokenizer, es EncoderSigner, cs CredStore) PasswordKeeper {
 	return &passwordKeeper{
-		hasher:    hasher,
-		passwords: store,
-		tokenizer: tokenizer,
-		es:        es,
+		hasher:      hasher,
+		passwords:   store,
+		tokenizer:   tokenizer,
+		es:          es,
 		credentials: cs,
 	}
 }
@@ -289,19 +287,18 @@ func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err er
 	//fixme: check the id in token and compare it to master
 	_, err1 := p.tokenizer.Parse(tokenStr)
 	if err1 != nil {
-		return errors.Wrap(ErrPermissionDenied,err1)
+		return errors.Wrap(ErrPermissionDenied, err1)
 	}
 
 	accounts := req.Accounts
 
-
-	for index, acc := range accounts{
-		fmt.Printf("adding account no: %v\n",index+1)
+	for index, acc := range accounts {
+		fmt.Printf("adding account no: %v\n", index+1)
 		var a Account
 		var d DBAccount
 		now := time.Now().Format(time.RFC3339)
 		name := acc.Name
-		username:= acc.UserName
+		username := acc.UserName
 		password := acc.Password
 		email := acc.Email
 
@@ -313,7 +310,7 @@ func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err er
 			Created:  now,
 		}
 
-		d,err = a.toDBAccount(p)
+		d, err = a.toDBAccount(p)
 
 		if err != nil {
 			return err
@@ -325,12 +322,10 @@ func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err er
 			return err
 		}
 
-
 	}
 
 	return nil
 }
-
 
 func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
 
@@ -379,7 +374,7 @@ func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (respon
 		}
 	}
 
-	err = p.hasher.Compare(password,account.Password)
+	err = p.hasher.Compare(password, account.Password)
 	if err != nil {
 
 		return LoginResponse{
@@ -419,7 +414,7 @@ func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrRes
 	}
 
 	name := request.Name
-	username:= request.UserName
+	username := request.UserName
 	password := request.Password
 	email := request.Email
 
@@ -431,7 +426,7 @@ func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrRes
 		Created:  time.Now().Format(time.RFC3339),
 	}
 
-	dbAccount,err2 := account.toDBAccount(p)
+	dbAccount, err2 := account.toDBAccount(p)
 
 	if err2 != nil {
 		msg := "could not encrypt account details"
@@ -441,7 +436,7 @@ func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrRes
 		}
 	}
 
-	err3 := p.passwords.Add(ctx,dbAccount)
+	err3 := p.passwords.Add(ctx, dbAccount)
 
 	if err3 != nil {
 		msg := "could not store the account details"
@@ -451,25 +446,24 @@ func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrRes
 		}
 	}
 
-
 	return ErrResponse{Err: nil}
 }
 
 func (p passwordKeeper) Get(ctx context.Context, request GetRequest) (response GetResponse) {
 
 	tokenStr := request.Token
-	_,err :=p.tokenizer.Parse(tokenStr)
+	_, err := p.tokenizer.Parse(tokenStr)
 
 	if err != nil {
 		return GetResponse{
 			Email:    "",
 			Password: "",
-			Err: err,
+			Err:      err,
 		}
 	}
 	username := request.UserName
 	name := request.Name
-	account,err := p.passwords.Get(ctx,name,username)
+	account, err := p.passwords.Get(ctx, name, username)
 	if err != nil {
 		return GetResponse{
 			Email:    "",
@@ -489,7 +483,7 @@ func (p passwordKeeper) Get(ctx context.Context, request GetRequest) (response G
 	}
 
 	return GetResponse{
-		Email:   acc.Email,
+		Email:    acc.Email,
 		Password: acc.Password,
 		Err:      nil,
 	}
@@ -499,10 +493,10 @@ func (p passwordKeeper) Delete(ctx context.Context, request GetRequest) (err Err
 	panic("implement me")
 }
 
-func (p passwordKeeper) List(ctx context.Context,request ListRequest) (list ListResponse) {
+func (p passwordKeeper) List(ctx context.Context, request ListRequest) (list ListResponse) {
 
 	tokenStr := request.Token
-	_,err :=p.tokenizer.Parse(tokenStr)
+	_, err := p.tokenizer.Parse(tokenStr)
 
 	if err != nil {
 		return ListResponse{
@@ -510,17 +504,17 @@ func (p passwordKeeper) List(ctx context.Context,request ListRequest) (list List
 			Err:      err,
 		}
 	}
-	var accounts [] Account
+	var accounts []Account
 	dbAccounts, err := p.passwords.List(ctx)
 
-	if err != nil{
+	if err != nil {
 		return ListResponse{
 			Accounts: nil,
 			Err:      err,
 		}
 	}
 
-	for _, dba := range dbAccounts{
+	for _, dba := range dbAccounts {
 		a, err := dba.toAccount(p)
 
 		if err != nil {
@@ -530,7 +524,7 @@ func (p passwordKeeper) List(ctx context.Context,request ListRequest) (list List
 			}
 		}
 
-		accounts = append(accounts,a)
+		accounts = append(accounts, a)
 	}
 
 	return ListResponse{

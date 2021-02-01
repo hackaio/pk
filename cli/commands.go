@@ -85,6 +85,11 @@ type Commands struct {
 	List   *cobra.Command
 }
 
+//beforeAny is run before any command is executed
+func beforeAny() {
+
+}
+
 func MakeAllCommands(comm commander) Commands {
 	return Commands{
 		Init:   makeInitCommand(comm),

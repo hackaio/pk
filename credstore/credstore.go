@@ -13,11 +13,12 @@
 
 package credstore
 
-import "github.com/hackaio/pk"
-import "github.com/zalando/go-keyring"
+import (
+	"github.com/hackaio/pk"
+	"github.com/zalando/go-keyring"
+)
 
-type cred struct {}
-
+type cred struct{}
 
 var _ pk.CredStore = (*cred)(nil)
 
@@ -30,16 +31,9 @@ func (c *cred) Set(service, user, password string) error {
 }
 
 func (c *cred) Get(service, user string) (string, error) {
-	return keyring.Get(service,user)
+	return keyring.Get(service, user)
 }
 
 func (c *cred) Delete(service, user string) error {
-	return keyring.Delete(service,user)
+	return keyring.Delete(service, user)
 }
-
-
-
-
-
-
-
