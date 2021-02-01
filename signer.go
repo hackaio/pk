@@ -14,24 +14,18 @@
 package pk
 
 
+type Signer interface {
+	Sign(string) ([]byte, []byte, error)
 
-type Middleware func(keeper PasswordKeeper) PasswordKeeper
-
-func New( hasher Hasher, store PasswordStore, tokenizer Tokenizer,
-	es EncoderSigner, middlewares []Middleware) PasswordKeeper {
-
-	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
-
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-
-	return keeper
+	Verify(password string, dbDigest []byte, dbSignature []byte) (err error)
 }
 
-func AddMiddlewares(keeper PasswordKeeper, middlewares []Middleware) PasswordKeeper {
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-	return keeper
+type Encoder interface {
+	Encode(password string) ([]byte, error)
+	Decode(encoded []byte) (string, error)
+}
+
+type EncoderSigner interface {
+	Encoder
+	Signer
 }

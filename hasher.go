@@ -15,23 +15,13 @@ package pk
 
 
 
-type Middleware func(keeper PasswordKeeper) PasswordKeeper
+// Hasher specifies an API for generating hashes of an arbitrary textual
+// content.
+type Hasher interface {
+	// Hash generates the hashed string from plain-text.
+	Hash(string) (string, error)
 
-func New( hasher Hasher, store PasswordStore, tokenizer Tokenizer,
-	es EncoderSigner, middlewares []Middleware) PasswordKeeper {
-
-	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
-
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-
-	return keeper
-}
-
-func AddMiddlewares(keeper PasswordKeeper, middlewares []Middleware) PasswordKeeper {
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-	return keeper
+	// Compare compares plain-text version to the hashed one.
+	//An error should indicate failed comparison.
+	Compare(string, string) error
 }

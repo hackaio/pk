@@ -13,25 +13,15 @@
 
 package pk
 
+import "context"
 
-
-type Middleware func(keeper PasswordKeeper) PasswordKeeper
-
-func New( hasher Hasher, store PasswordStore, tokenizer Tokenizer,
-	es EncoderSigner, middlewares []Middleware) PasswordKeeper {
-
-	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
-
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-
-	return keeper
-}
-
-func AddMiddlewares(keeper PasswordKeeper, middlewares []Middleware) PasswordKeeper {
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-	return keeper
+type PasswordStore interface {
+	CheckAccount(ctx context.Context, name, username string) (err error)
+	AddOwner(ctx context.Context, account Account) (err error)
+	Add(ctx context.Context, account DBAccount) (err error)
+	Get(ctx context.Context, name, username string) (account DBAccount, err error)
+	GetOwner(ctx context.Context, name, username string) (account Account, err error)
+	Delete(ctx context.Context, name, username string) (err error)
+	Update(ctx context.Context, name, username string, account DBAccount) (err error)
+	List(ctx context.Context) (accounts []DBAccount, err error)
 }

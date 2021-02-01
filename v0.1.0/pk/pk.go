@@ -146,26 +146,7 @@ func (p passwordKeeper) DeleteAll(ctx context.Context, token string, args map[st
 
 
 
-type Middleware func(keeper PasswordKeeper) PasswordKeeper
 
-func New( hasher pk.Hasher, store pk.PasswordStore, tokenizer pk.Tokenizer,
-	es pk.EncoderSigner, middlewares []Middleware) PasswordKeeper {
-
-	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
-
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-
-	return keeper
-}
-
-func AddMiddlewares(keeper PasswordKeeper, middlewares []Middleware) PasswordKeeper {
-	for _, middleware := range middlewares {
-		keeper = middleware(keeper)
-	}
-	return keeper
-}
 
 
 

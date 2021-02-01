@@ -28,51 +28,11 @@ const (
 )
 
 var (
-	ErrNotFound          = errors.New("not found")
-	ErrCouldNotCreateAcc = errors.New("could not create account")
 	ErrPermissionDenied  = errors.New("permission denied")
 	ErrInternalError     = errors.New("internal error, possible db compromise")
 	ErrCriticalFailure   = errors.New("could not perform critical operation")
 )
 
-type RequestDecoder interface {
-}
-
-type ResponseEncoder interface {
-	Encode(response interface{})
-}
-
-// Hasher specifies an API for generating hashes of an arbitrary textual
-// content.
-type Hasher interface {
-	// Hash generates the hashed string from plain-text.
-	Hash(string) (string, error)
-
-	// Compare compares plain-text version to the hashed one.
-	//An error should indicate failed comparison.
-	Compare(string, string) error
-}
-
-type Signer interface {
-	Sign(string) ([]byte, []byte, error)
-
-	Verify(password string, dbDigest []byte, dbSignature []byte) (err error)
-}
-
-type Encoder interface {
-	Encode(password string) ([]byte, error)
-	Decode(encoded []byte) (string, error)
-}
-
-type EncoderSigner interface {
-	Encoder
-	Signer
-}
-
-type BulkAddRequest struct {
-	Token    string    `json:"token"`
-	Accounts []Account `json:"accounts"`
-}
 
 type Account struct {
 	Name     string `json:"name,omitempty"`
@@ -93,65 +53,7 @@ type DBAccount struct {
 	Created   string `json:"created,omitempty"`
 }
 
-type RegisterRequest struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
 
-type LoginRequest struct {
-	UserName string `json:"username"`
-	Password string `json:"password"`
-}
-
-type LoginResponse struct {
-	Token string `json:"token"`
-	Err   error  `json:"err"`
-}
-
-type AddRequest struct {
-	Token    string `json:"token"`
-	Name     string `json:"name"`
-	UserName string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type GetRequest struct {
-	Token    string `json:"token"`
-	Name     string `json:"name"`
-	UserName string `json:"username"`
-}
-
-type GetResponse struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Err      error  `json:"err"`
-}
-
-type ListRequest struct {
-	Token string
-}
-type ListResponse struct {
-	Accounts []Account `json:"accounts"`
-	Err      error     `json:"err,omitempty"`
-}
-
-type UpdateRequest struct {
-	Token    string `json:"token"`
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	NewUser  string `json:"new_user"` //new username of the account
-	Password string `json:"password"`
-	Email    string `json:"email"`
-}
-
-//ErrResponse is a generic error response for function
-//returning error as the only return value
-type ErrResponse struct {
-	Err error  `json:"err"`
-	Msg string `json:"msg"`
-}
 
 func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount, error) {
 
@@ -249,22 +151,27 @@ type PasswordKeeper interface {
 
 }
 
-type PasswordStore interface {
-	CheckAccount(ctx context.Context, name, username string) (err error)
-	AddOwner(ctx context.Context, account Account) (err error)
-	Add(ctx context.Context, account DBAccount) (err error)
-	Get(ctx context.Context, name, username string) (account DBAccount, err error)
-	GetOwner(ctx context.Context, name, username string) (account Account, err error)
-	Delete(ctx context.Context, name, username string) (err error)
-	Update(ctx context.Context, name, username string, account DBAccount) (err error)
-	List(ctx context.Context) (accounts []DBAccount, err error)
-}
+
 
 type passwordKeeper struct {
 	hasher      Hasher
 	passwords   PasswordStore
 	tokenizer   Tokenizer
 	es          EncoderSigner
+}
+
+var _ PasswordKeeper = (*passwordKeeper)(nil)
+
+func NewPasswordKeeper(
+	hasher Hasher, store PasswordStore,
+	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
+	return &passwordKeeper{
+		hasher:      hasher,
+		passwords:   store,
+		tokenizer:   tokenizer,
+		es:          es,
+
+	}
 }
 
 func (p passwordKeeper) Register(ctx context.Context, username, email, password string) (err error) {
@@ -453,163 +360,4 @@ func (p passwordKeeper) DeleteAll(ctx context.Context, token string, args map[st
 	panic("implement me")
 }
 
-var _ PasswordKeeper = (*passwordKeeper)(nil)
 
-func NewPasswordKeeper(
-	hasher Hasher, store PasswordStore,
-	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
-	return &passwordKeeper{
-		hasher:      hasher,
-		passwords:   store,
-		tokenizer:   tokenizer,
-		es:          es,
-
-	}
-}
-
-/*func (p passwordKeeper) AddMany(ctx context.Context, req BulkAddRequest) (err error) {
-	tokenStr := req.Token
-	//fixme: check the id in token and compare it to master
-	_, err1 := p.tokenizer.Parse(tokenStr)
-	if err1 != nil {
-		return errors.Wrap(ErrPermissionDenied, err1)
-	}
-
-	accounts := req.Accounts
-
-	for index, acc := range accounts {
-		fmt.Printf("adding account no: %v\n", index+1)
-		var a Account
-		var d DBAccount
-		now := time.Now().Format(time.RFC3339)
-		name := acc.Name
-		username := acc.UserName
-		password := acc.Password
-		email := acc.Email
-
-		a = Account{
-			Name:     name,
-			UserName: username,
-			Email:    email,
-			Password: password,
-			Created:  now,
-		}
-
-		d, err = a.toDBAccount(p)
-
-		if err != nil {
-			return err
-		}
-
-		err = p.passwords.Add(ctx, d)
-
-		if err != nil {
-			return err
-		}
-
-	}
-
-	return nil
-}
-
-func (p passwordKeeper) Register(ctx context.Context, request RegisterRequest) (errResponse ErrResponse) {
-
-
-}
-
-func (p passwordKeeper) Login(ctx context.Context, request LoginRequest) (response LoginResponse) {
-
-}
-
-func (p passwordKeeper) Add(ctx context.Context, request AddRequest) (err ErrResponse) {
-
-}
-
-func (p passwordKeeper) Get(ctx context.Context, request GetRequest) (response GetResponse) {
-
-	tokenStr := request.Token
-	_, err := p.tokenizer.Parse(tokenStr)
-
-	if err != nil {
-		return GetResponse{
-			Email:    "",
-			Password: "",
-			Err:      err,
-		}
-	}
-	username := request.UserName
-	name := request.Name
-	account, err := p.passwords.Get(ctx, name, username)
-	if err != nil {
-		return GetResponse{
-			Email:    "",
-			Password: "",
-			Err:      err,
-		}
-	}
-
-	acc, err := account.toAccount(p)
-
-	if err != nil {
-		return GetResponse{
-			Email:    "",
-			Password: "",
-			Err:      err,
-		}
-	}
-
-	return GetResponse{
-		Email:    acc.Email,
-		Password: acc.Password,
-		Err:      nil,
-	}
-}
-
-func (p passwordKeeper) Delete(ctx context.Context, request GetRequest) (err ErrResponse) {
-	panic("implement me")
-}
-
-func (p passwordKeeper) List(ctx context.Context, request ListRequest) (list ListResponse) {
-
-	tokenStr := request.Token
-	_, err := p.tokenizer.Parse(tokenStr)
-
-	if err != nil {
-		return ListResponse{
-			Accounts: nil,
-			Err:      err,
-		}
-	}
-	var accounts []Account
-	dbAccounts, err := p.passwords.List(ctx)
-
-	if err != nil {
-		return ListResponse{
-			Accounts: nil,
-			Err:      err,
-		}
-	}
-
-	for _, dba := range dbAccounts {
-		a, err := dba.toAccount(p)
-
-		if err != nil {
-			return ListResponse{
-				Accounts: accounts,
-				Err:      err,
-			}
-		}
-
-		accounts = append(accounts, a)
-	}
-
-	return ListResponse{
-		Accounts: accounts,
-		Err:      err,
-	}
-}
-
-func (p passwordKeeper) Update(ctx context.Context, request UpdateRequest) (response ErrResponse) {
-	panic("implement me")
-}
-*/
