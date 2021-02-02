@@ -18,22 +18,22 @@ import (
 	"github.com/zalando/go-keyring"
 )
 
-type cred struct{}
+type secrets struct{}
 
-var _ pk.SecretStore = (*cred)(nil)
+var _ pk.SecretStore = (*secrets)(nil)
 
 func New() pk.SecretStore {
-	return &cred{}
+	return &secrets{}
 }
 
-func (c *cred) Set(service, user, password string) error {
+func (s *secrets) Set(service, user, password string) error {
 	return keyring.Set(service, user, password)
 }
 
-func (c *cred) Get(service, user string) (string, error) {
+func (s *secrets) Get(service, user string) (string, error) {
 	return keyring.Get(service, user)
 }
 
-func (c *cred) Delete(service, user string) error {
+func (s *secrets) Delete(service, user string) error {
 	return keyring.Delete(service, user)
 }
