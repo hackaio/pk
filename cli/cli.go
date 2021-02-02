@@ -36,26 +36,26 @@ var (
 )
 
 type commander struct {
-	keeper      pk.PasswordKeeper
-	credentials pk.CredStore
-	csvReader   pk.BulkReader
-	csvWriter   pk.BulkWriter
-	jsonReader  pk.BulkReader
-	jsonWriter  pk.BulkWriter
+	keeper     pk.PasswordKeeper
+	secrets    pk.SecretStore
+	csvReader  pk.Reader
+	csvWriter  pk.Writer
+	jsonReader pk.Reader
+	jsonWriter pk.Writer
 }
 
 var _ commands.Runner = (*commander)(nil)
 
-func NewCommandsRunner(keeper pk.PasswordKeeper, store pk.CredStore,
-	csvReader pk.BulkReader, csvWriter pk.BulkWriter, jsonReader pk.BulkReader,
-	jsonWriter pk.BulkWriter) commands.Runner {
+func NewCommandsRunner(keeper pk.PasswordKeeper, store pk.SecretStore,
+	csvReader pk.Reader, csvWriter pk.Writer, jsonReader pk.Reader,
+	jsonWriter pk.Writer) commands.Runner {
 	return &commander{
-		keeper:      keeper,
-		credentials: store,
-		csvReader:   csvReader,
-		csvWriter:   csvWriter,
-		jsonReader:  jsonReader,
-		jsonWriter:  jsonWriter,
+		keeper:     keeper,
+		secrets:    store,
+		csvReader:  csvReader,
+		csvWriter:  csvWriter,
+		jsonReader: jsonReader,
+		jsonWriter: jsonWriter,
 	}
 }
 
@@ -130,7 +130,7 @@ func (comm *commander) runInitCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-		err = comm.credentials.Set(pk.AppName, username, string(password))
+		err = comm.secrets.Set(pk.AppName, username, string(password))
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
@@ -161,7 +161,7 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 
 		var password string
 
-		cs := comm.credentials
+		cs := comm.secrets
 
 		password, err = cs.Get(pk.AppName, username)
 
@@ -198,7 +198,7 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 				password = string(passwordBytes)
 
 				//fixme
-				_ = comm.credentials.Set(pk.AppName, username, password)
+				_ = comm.secrets.Set(pk.AppName, username, password)
 
 				return
 			} else {
@@ -213,7 +213,7 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 			os.Exit(1)
 		}
 
-		err = comm.credentials.Set(pk.AppName, "token", token)
+		err = comm.secrets.Set(pk.AppName, "token", token)
 
 		if err != nil {
 			err1 := errors.New(fmt.Sprintf("could not save token due to: %v", err))
@@ -235,7 +235,7 @@ func (comm *commander) runAddCommand() commands.RunFunc {
 		email, err := cmd.Flags().GetString("email")
 		password, err := cmd.Flags().GetString("password")
 		name, err := cmd.Flags().GetString("name")
-		token, err := comm.credentials.Get(pk.AppName, "token")
+		token, err := comm.secrets.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -327,7 +327,7 @@ func (comm *commander) runGetCommand() commands.RunFunc {
 	return func(cmd *cobra.Command, args []string) {
 		username, err := cmd.Flags().GetString("username")
 		name, err := cmd.Flags().GetString("name")
-		token, err := comm.credentials.Get(pk.AppName, "token")
+		token, err := comm.secrets.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -363,7 +363,7 @@ func (comm *commander) runListCommand() commands.RunFunc {
 
 	return func(cmd *cobra.Command, args []string) {
 		limit, err := cmd.Flags().GetInt("limit")
-		token, err := comm.credentials.Get(pk.AppName, "token")
+		token, err := comm.secrets.Get(pk.AppName, "token")
 
 		if err != nil {
 			logError(err)
@@ -503,7 +503,7 @@ func makeInitCommand(comm commands.Runner) *cobra.Command {
 		Run:     comm.Run(commands.Init),
 	}
 
-	initCmd.Flags().BoolP("credstore", "c", true, "store credentials")
+	initCmd.Flags().BoolP("credstore", "c", true, "store secrets")
 
 	return initCmd
 }

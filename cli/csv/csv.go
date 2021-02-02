@@ -24,13 +24,31 @@ import (
 )
 
 var (
-	_ pk.BulkReader = (*reader)(nil)
-	_ pk.BulkWriter = (*writer)(nil)
+	_ pk.Reader = (*reader)(nil)
+	_ pk.Writer = (*writer)(nil)
+	_ pk.ReaderWriter = (*readerWriter)(nil)
+
 )
+
+type readerWriter struct {
+
+}
+
+func ReaderWriter() pk.ReaderWriter {
+	return &readerWriter{}
+}
+
+func (r readerWriter) Read(ctx context.Context, fileName string) (res []pk.Account, err error) {
+	panic("implement me")
+}
+
+func (r readerWriter) Write(ctx context.Context, request pk.FileWriterReq) error {
+	panic("implement me")
+}
 
 type reader struct{}
 
-func NewReader() pk.BulkReader {
+func NewReader() pk.Reader {
 	return &reader{}
 }
 
@@ -62,7 +80,7 @@ func (r *reader) Read(ctx context.Context, fileName string) (res []pk.Account, e
 
 type writer struct{}
 
-func NewWriter() pk.BulkWriter {
+func NewWriter() pk.Writer {
 	return &writer{}
 }
 

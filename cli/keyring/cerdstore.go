@@ -20,9 +20,9 @@ import (
 
 type cred struct{}
 
-var _ pk.CredStore = (*cred)(nil)
+var _ pk.SecretStore = (*cred)(nil)
 
-func New() pk.CredStore {
+func New() pk.SecretStore {
 	return &cred{}
 }
 

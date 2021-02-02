@@ -17,6 +17,22 @@ import (
 	"context"
 )
 
-type BulkReader interface {
+type FileWriterReq struct {
+	Accounts []Account
+	FileName string
+	FileExt  string
+	FileDir  string
+}
+
+type Reader interface {
 	Read(ctx context.Context, fileName string) (res []Account, err error)
+}
+
+type Writer interface {
+	Write(ctx context.Context, request FileWriterReq) error
+}
+
+type ReaderWriter interface {
+	Writer
+	Reader
 }
