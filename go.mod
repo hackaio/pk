@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
-	github.com/docker/docker-credential-helpers v0.6.3
 	github.com/fatih/color v1.7.0
 	github.com/hokaccha/go-prettyjson v0.0.0-20210113012101-fb4e108d2519
 	github.com/lib/pq v1.9.0

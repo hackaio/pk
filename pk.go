@@ -54,7 +54,7 @@ type DBAccount struct {
 
 func (a Account) toDBAccount(keeper passwordKeeper) (DBAccount, error) {
 
-	hash, err := keeper.hasher.Hash(a.Password)
+	hash, err := keeper.hash.Hash(a.Password)
 
 	if err != nil {
 		return DBAccount{}, err
@@ -148,7 +148,7 @@ type PasswordKeeper interface {
 }
 
 type passwordKeeper struct {
-	hasher    Hasher
+	hash      Hasher
 	passwords PasswordStore
 	tokenizer Tokenizer
 	es        EncoderSigner
@@ -160,7 +160,7 @@ func NewPasswordKeeper(
 	hasher Hasher, store PasswordStore,
 	tokenizer Tokenizer, es EncoderSigner) PasswordKeeper {
 	return &passwordKeeper{
-		hasher:    hasher,
+		hash:      hasher,
 		passwords: store,
 		tokenizer: tokenizer,
 		es:        es,
@@ -168,7 +168,7 @@ func NewPasswordKeeper(
 }
 
 func (p passwordKeeper) Register(ctx context.Context, username, email, password string) (err error) {
-	passwordHash, err := p.hasher.Hash(password)
+	passwordHash, err := p.hash.Hash(password)
 	if err != nil {
 		return err
 	}
@@ -200,7 +200,7 @@ func (p passwordKeeper) Login(ctx context.Context, username, password string) (t
 		return "", err1
 	}
 
-	err = p.hasher.Compare(password, account.Password)
+	err = p.hash.Compare(password, account.Password)
 	if err != nil {
 		err1 := errors.New(fmt.Sprintf("credentials comaprison failed: %v\n", err))
 		return "", err1

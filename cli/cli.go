@@ -35,6 +35,8 @@ var (
 	debugMessage = "not yet implemented"
 )
 
+
+
 type commander struct {
 	keeper     pk.PasswordKeeper
 	secrets    pk.SecretStore
@@ -83,6 +85,65 @@ func MakeAllCommands(comm commands.Runner) Commands {
 		Update:   makeUpdateCommand(comm),
 		DB:       makeDBCommand(comm),
 		List:     makeListCommand(comm),
+	}
+}
+
+func (comm *commander) fetchTokenFunc() commands.RunFunc {
+	return func(cmd *cobra.Command, args []string) {
+		username, err := cmd.Flags().GetString("username")
+
+		if err != nil || username == "" {
+			logError(err)
+			os.Exit(1)
+		}
+
+		var password string
+
+		cs := comm.secrets
+
+		password, err = cs.Get(pk.AppName, username)
+
+		if err != nil || password == "" {
+
+			if err == keyring.ErrNotFound {
+				fmt.Println("Enter password: ")
+				passwordBytes, err := terminal.ReadPassword(0)
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+				fmt.Println("Enter password again: ")
+
+				passwordBytes1, err := terminal.ReadPassword(0)
+
+				if err != nil {
+					logError(err)
+					os.Exit(1)
+				}
+
+				if !bytes.Equal(passwordBytes, passwordBytes1) {
+					err1 := errors.New("password mismatch")
+					logError(err1)
+					os.Exit(1)
+				}
+
+				if string(passwordBytes) == "" || len(string(passwordBytes)) < minPasswordLen {
+					err1 := errors.New("password length should be >= 6 chars")
+					logError(err1)
+					os.Exit(1)
+				}
+
+				password = string(passwordBytes)
+
+				//fixme
+				_ = comm.secrets.Set(pk.AppName, username, password)
+
+				return
+			} else {
+				logError(err)
+				os.Exit(1)
+			}
+		}
 	}
 }
 
