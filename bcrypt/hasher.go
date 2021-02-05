@@ -25,10 +25,11 @@ var (
 	errHashPassword    = errors.New("generate hash from password failed")
 	errComparePassword = errors.New("compare hash and password failed")
 )
+type bcryptHasher struct{}
+
 
 var _ pk.Hasher = (*bcryptHasher)(nil)
 
-type bcryptHasher struct{}
 
 // New instantiates a bcrypt-based hasher implementation.
 func New() pk.Hasher {

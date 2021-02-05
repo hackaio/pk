@@ -36,7 +36,6 @@ func (c claims) Valid() error {
 	if c.Issuer != issuerName {
 		return ErrInvalidToken
 	}
-
 	return c.StandardClaims.Valid()
 }
 
@@ -94,15 +93,11 @@ func (t tokenizer) Parse(token string) (pk.Token, error) {
 		}
 		return []byte(t.secret), nil
 	})
-
 	if err != nil {
 		if e, ok := err.(*jwt.ValidationError); ok && e.Errors == jwt.ValidationErrorExpired {
-
 			return pk.Token{}, errors.Wrap(ErrTokenExpired, err)
 		}
 		return pk.Token{}, errors.Wrap(pk.ErrPermissionDenied, err)
 	}
-
 	return c.toToken(), nil
-
 }

@@ -13,13 +13,16 @@
 
 package pk
 
-//SecretStore provides API to manage credentials securely
+//SecretsRepository provides API to manage credentials securely
 //per OS specific mechanism
-type SecretStore interface {
+type SecretsRepository interface {
+
 	// Set password in keyring for user.
 	Set(service, user, password string) error
+
 	// Get password from keyring given service and user name.
 	Get(service, user string) (string, error)
+
 	// Delete secret from keyring.
 	Delete(service, user string) error
 }

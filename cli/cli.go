@@ -35,11 +35,9 @@ var (
 	debugMessage = "not yet implemented"
 )
 
-
-
 type commander struct {
 	keeper     pk.PasswordKeeper
-	secrets    pk.SecretStore
+	secrets    pk.SecretsRepository
 	csvReader  pk.Reader
 	csvWriter  pk.Writer
 	jsonReader pk.Reader
@@ -48,7 +46,7 @@ type commander struct {
 
 var _ commands.Runner = (*commander)(nil)
 
-func NewCommandsRunner(keeper pk.PasswordKeeper, store pk.SecretStore,
+func NewCommandsRunner(keeper pk.PasswordKeeper, store pk.SecretsRepository,
 	csvReader pk.Reader, csvWriter pk.Writer, jsonReader pk.Reader,
 	jsonWriter pk.Writer) commands.Runner {
 	return &commander{
@@ -134,7 +132,6 @@ func (comm *commander) fetchTokenFunc() commands.RunFunc {
 				}
 
 				password = string(passwordBytes)
-
 				//fixme
 				_ = comm.secrets.Set(pk.AppName, username, password)
 
@@ -257,10 +254,8 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 				}
 
 				password = string(passwordBytes)
-
 				//fixme
 				_ = comm.secrets.Set(pk.AppName, username, password)
-
 				return
 			} else {
 				logError(err)
@@ -285,7 +280,6 @@ func (comm *commander) runLoginCommand() commands.RunFunc {
 		logMessage("token", token)
 		return
 	}
-
 }
 
 func (comm *commander) runAddCommand() commands.RunFunc {

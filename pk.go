@@ -100,7 +100,10 @@ func (a DBAccount) toAccount(keeper passwordKeeper) (Account, error) {
 	}, nil
 }
 
+
+//PasswordKeeper
 type PasswordKeeper interface {
+	
 	//Register creates a new account. The function takes
 	//Username, Email, Password. Account name is "master"
 	//This is the first function to be called when running

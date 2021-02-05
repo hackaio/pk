@@ -20,13 +20,14 @@ import (
 	"github.com/hackaio/pk/cli/json"
 	"github.com/hackaio/pk/cli/keyring"
 	"github.com/hackaio/pk/pg"
+	"github.com/hackaio/pk/pkg/errors"
 	"github.com/hackaio/pk/rsa"
 	"github.com/spf13/cobra"
 	"log"
 	"os"
 
 	"github.com/hackaio/pk/jwt"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
@@ -66,7 +67,10 @@ func init() {
 
 	pgDatabase, err := pg.Connect()
 	if err != nil {
-		panic(err)
+		msg := fmt.Sprintf("could not connect to postgres database: %v\n",err)
+		err1 := errors.New(msg)
+		logError(err1)
+		os.Exit(1)
 	}
 
 	store := pg.NewStore(pgDatabase)
@@ -78,7 +82,9 @@ func init() {
 	homeDir, err := homedir.Dir()
 	es, err := rsa.NewEncoderSigner(homeDir)
 	if err != nil {
-		panic(err)
+		msg := fmt.Sprintf("could not find credentials : %v\n",err)
+		err1 := errors.New(msg)
+		logError(err1)
 	}
 
 	keeper := pk.NewPasswordKeeper(hasher, store, tokenizer, es)

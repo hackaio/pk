@@ -15,10 +15,10 @@ package pk
 
 type Middleware func(keeper PasswordKeeper) PasswordKeeper
 
-func New(hasher Hasher, store PasswordStore, tokenizer Tokenizer,
+func New(hash Hasher, store PasswordStore, tokenizer Tokenizer,
 	es EncoderSigner, middlewares []Middleware) PasswordKeeper {
 
-	var keeper = NewPasswordKeeper(hasher, store, tokenizer, es)
+	var keeper = NewPasswordKeeper(hash, store, tokenizer, es)
 
 	for _, middleware := range middlewares {
 		keeper = middleware(keeper)
